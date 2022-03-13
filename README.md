@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Sample-Efficient Automated Deep Reinforcement Learning
 
 [![Python](https://img.shields.io/badge/python-3.6-yellow.svg)](https://www.python.org/downloads/release/python-3611/)
@@ -62,6 +61,3 @@ If you use this code in your own work, please cite SEARL using the following bib
   year={2021},
 }
 ```
-=======
-# searl_RLR_project
->>>>>>> e499c24565224e5c218a559bddac92cb1a744690
