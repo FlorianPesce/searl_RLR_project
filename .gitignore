@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Experiment Folders
 experiments/
 
@@ -248,4 +247,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
->>>>>>> e499c24565224e5c218a559bddac92cb1a744690
