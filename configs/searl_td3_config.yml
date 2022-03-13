@@ -71,7 +71,7 @@ seed:
 ###    Environment Configuration    ###
 #######################################
 env:
-  name:                        'Walker2d-v2' #'Walker2d-v2' #'HalfCheetah-v2' # HalfCheetah-v2'
+  name:                        'MountainCarContinuous-v0' #'Walker2d-v2' #'Walker2d-v2' #'HalfCheetah-v2' # HalfCheetah-v2'
 
 
 eval:
