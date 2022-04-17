@@ -125,7 +125,10 @@ class SEARLforTD3():
             ind.train_log['epoch'] = epoch
 
         #select some cells for mutation in population
-        population_subset = #random subset
+        population_subset = population#random subset
+
+        self.macto_mutation
+
 
         
 
