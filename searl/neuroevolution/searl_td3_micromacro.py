@@ -129,8 +129,14 @@ class SEARLforTD3():
         # don't give mutations a chance to grow, and
 
         # how do you evaluate a population of cells?
-        # you need to get the corresponding population
-        # of individuals and then
+        # you need to get the corresponding population of individuals, grouped by cell, and then
+        # evaluate the individuals, then return the fitness function for each cell
+        # you could do this one cell at a time
+        # for cell, find individuals, evaluate each, save fitness
+        # for now, I guess you can just find
+
+        # you could iterate through all the individuals, and find the corresponding ones with that cell
+        # or
 
         #evaluate population
 

@@ -53,6 +53,7 @@ class EvolvableMacroNetwork(nn.Module):
         self.activation = activation
         self.output_activation = output_activation
 
+
     #returns an ordered dict of macrolayers and 
     #macro layer connections
     def create_net(self) -> OrderedDict:

@@ -22,6 +22,9 @@ class EvolvableMLPCell(nn.Module):
 
         self.net = self.create_net()
 
+        self.fitness = []
+        self.improvement = 0
+
         if stored_values is not None:
             self.inject_parameters(pvec=stored_values, without_layer_norm=False)
 
