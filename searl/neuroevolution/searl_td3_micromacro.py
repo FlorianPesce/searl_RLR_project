@@ -124,7 +124,8 @@ class SEARLforTD3():
         for ind in population:
             ind.train_log['epoch'] = epoch
 
-        
+        #select some cells for mutation in population
+        population_subset = #random subset
 
         
 
