@@ -11,8 +11,8 @@ expt:
 ###      NEVO Configuration         ###
 #######################################
 nevo:
-  population_size:              10
-  tournament_size:              3
+  population_size:              2 #10
+  tournament_size:              1 #3
   selection:                    True
   mutation:                     True
   training:                     True
@@ -21,7 +21,9 @@ nevo:
   worker:                       5
   reuse_batch:                  1
   ind_memory:                   False
-  init_random:                  False
+  init_random_macro:            False
+  init_random_micro:            False
+  cell_pop_size:                20
 
 
 mutation:
@@ -31,7 +33,7 @@ mutation:
   activation:                   0.2
   rl_hyperparam:                0.2
   rl_hp_selection:              ['lr_actor','lr_critic'] # 'train_frames_fraction','batch_size',,'td3_policy_noise','td3_update_freq', 'optimizer']
-  new_layer_prob:               0.2
+  # new_layer_prob:               0.2
   mutation_sd:                  0.1
 
 
@@ -71,7 +73,7 @@ seed:
 ###    Environment Configuration    ###
 #######################################
 env:
-  name:                        'Walker2d-v2' #'Walker2d-v2' #'HalfCheetah-v2' # HalfCheetah-v2'
+  name:                        'MountainCarContinuous-v0' #'Walker2d-v2' #'Walker2d-v2' #'HalfCheetah-v2' # HalfCheetah-v2'
 
 
 eval:
@@ -101,3 +103,13 @@ critic:
   output_activation:       'linear'
   layer_norm:              True
   output_vanish:           True
+
+#######################################
+###  Cell Starting Configuration  ###
+#######################################
+cell:
+  hidden_size:             [128]
+  activation:              'relu'
+  output_activation:       'linear'
+  layer_norm:              True
+  output_vanish:           False
