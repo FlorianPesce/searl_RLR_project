@@ -113,3 +113,4 @@ cell:
   output_activation:       'linear'
   layer_norm:              True
   output_vanish:           False
+  keep_original_population: False

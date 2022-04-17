@@ -124,10 +124,38 @@ class SEARLforTD3():
         for ind in population:
             ind.train_log['epoch'] = epoch
 
+        # problems with selecting from the original
+        # population, could also be that you
+        # don't give mutations a chance to grow, and
+
+        # how do you evaluate a population of cells?
+        # you need to get the corresponding population
+        # of individuals and then
+
+        #evaluate population
+
+
+
+
+        #log population info
+
+        #save population
+
+        #tournament selection
+
+        #mutation
+
+        #training
+
+        pool.terminate()
+        pool.join()
+
         #select some cells for mutation in population
         population_subset = population#random subset
 
-        self.macto_mutation
+
+        self.macro_mutation.mutation()
+
 
 
         
