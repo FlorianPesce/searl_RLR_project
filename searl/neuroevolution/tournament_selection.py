@@ -13,8 +13,10 @@ class TournamentSelection():
         winner = selection[np.argmax(selection_values)]
         return winner
 
+
     def select(self, population):
         last_fitness = [indi.fitness[-1] for indi in population]
+        #returns indices of rank (indices that would sort array)
         rank = np.argsort(last_fitness).argsort()
 
         max_id = max([ind.index for ind in population])
@@ -23,6 +25,8 @@ class TournamentSelection():
 
         new_population = []
         if self.cfg.nevo.elitism:
+            #appends best individual in population
+            #no matter what
             new_population.append(elite.clone())
             selection_size = self.cfg.nevo.population_size - 1
         else:

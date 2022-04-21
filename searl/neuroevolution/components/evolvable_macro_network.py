@@ -53,6 +53,17 @@ class EvolvableMacroNetwork(nn.Module):
         self.activation = activation
         self.output_activation = output_activation
 
+    def update_cell_fitnesses(self, mean_fitness):
+
+        for layer in self.layers:
+            for cell in layer.cells:
+                cell.fitness.append(mean_fitness)
+                cell.active_population = True
+
+
+
+
+
 
     #returns an ordered dict of macrolayers and 
     #macro layer connections

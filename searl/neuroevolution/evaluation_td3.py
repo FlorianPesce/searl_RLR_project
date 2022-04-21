@@ -95,12 +95,17 @@ class MPEvaluation():
         if start_phase:
             self.log("start phase", time_step=total_frames)
 
+        #arguments for _evaluate_individual multiprocessing
         args_list = [(ind, self.cfg, self.eval_episodes, self.rng.randint(0, 100000), exploration_noise, start_phase)
                      for ind in population]
+
+        #apply multiprocessing to _evaluate_individual
         result_dicts = [pool.apply(self._evaluate_individual, args) for args in args_list]
         result_dict = dict(ChainMap(*result_dicts))
 
         eval_frames = 0
+
+        #I think this sets the fitness values for all members of the population
         for ind_id, value_dict in result_dict.items():
             pop_idx = population_id_lookup.index(ind_id)
             new_population_mean_fitness[pop_idx] = np.mean(value_dict['fitness_list'])
@@ -109,12 +114,14 @@ class MPEvaluation():
 
             population[pop_idx].train_log["eval_eps"] = self.eval_episodes
 
+            #adding memory to replay
             for transitions in value_dict['transitions']:
                 if self.cfg.nevo.ind_memory:
                     population[pop_idx].replay_memory.add(transitions)
                 else:
                     self.push_queue.put(transitions)
 
+        #
         for idx in range(len(population)):
             population[idx].train_log["post_fitness"] = new_population_mean_fitness[idx]
             population[idx].train_log["index"] = population[idx].index

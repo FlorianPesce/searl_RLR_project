@@ -3,7 +3,7 @@ import copy
 from searl.neuroevolution.components.evolvable_macro_network import EvolvableMacroNetwork
 
 
-class Individual():
+class IndividualMacro():
 
     def __init__(self, state_dim, action_dim, actor_config, critic_config, rl_config, index, td3_double_q,
                  critic_2_config=None, replay_memory=None):
@@ -31,6 +31,12 @@ class Individual():
                           "index": None, "parent_index": None, "mutation": None}
 
         self.replay_memory = replay_memory
+
+    def update_cell_fitnesses(self):
+        self.actor.update_cell_fitnesses(self.fitness[-1])
+        self.critic_1.update_cell_fitnesses(self.fitness[-1])
+        self.critic_2.update_cell_fitnesses(self.fitness[-1])
+
 
     def clone(self, index=None):
         if index is None:

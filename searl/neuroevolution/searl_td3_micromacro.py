@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.multiprocessing as mp
 from searl.neuroevolution.components.cell import EvolvableMLPCell
-from searl.neuroevolution.components.individual_td3_macro import Individual
+from searl.neuroevolution.components.individual_td3_macro import IndividualMacro
 from searl.neuroevolution.components.replay_memory import (MPReplayMemory,
                                                            ReplayMemory)
 from searl.neuroevolution.evaluation_td3 import MPEvaluation
@@ -55,6 +55,23 @@ class SEARLforTD3():
         self.micro_mutation = MicroMutations(config=self.cfg, replay_sample_queue=sample_queue)
 
         self.training = TD3Training(config=self.cfg, replay_sample_queue=sample_queue)
+
+    def update_cell_fitnesses(self, population):
+        assert(len(population) > 0)
+        assert(isinstance(population[0], IndividualMacro))
+
+        for ind in population:
+            ind.update_cell_fitnesses()
+
+    def update_cell_mean_fitness(self, cell_population):
+        assert(len(cell_population > 0))
+        assert(isinstance(cell_population[0], EvolvableMLPCell))
+
+        for cell in cell_population:
+            if cell.active_population:
+                cell.mean_fitness = sum(cell.fitness) / len(cell.fitness)
+
+
 
     def initial_population_micro(self):
         self.log.log("initialize micro population")
@@ -138,10 +155,9 @@ class SEARLforTD3():
         # you could iterate through all the individuals, and find the corresponding ones with that cell
         # or
 
+        #what order?
+
         #evaluate population
-
-
-
 
         #log population info
 
@@ -234,13 +250,133 @@ class SEARLforTD3():
     def close(self):
         self.replay_memory.close()
 
-    def evolve_hierarchical_SEARL(micro_population, macro_population):
+    def evolve_hierarchical_SEARL(self, micro_population, macro_population):
+
+        #potential issues:
+
+        #if you mutate cells
+        #you have a copy of individuals with each cell (individuals doubled)
+        #but you may not mutate all of those individuals
+
+        #by tracking the ancestry of a cell,
+        #you could formulate a better way to
+
+        #increased complexity
+            #one solution is to just perform less mutations
+        #parallel programming of evaluating several mutations in parallel
+
+        #in order to evaluate cells or individuals,
+        #you evaluate individuals, but you need to track
+        #which cells are connected to which individuals
+        #otherwise, this is essentially the same as
+        #evaluate was previously
+        #EVALUATE SAME BUT CELL TRACKING
+        #and then with the cell tracking you need to return cell fitness
+        #values for each cell for selection
+
+        #SELECT should be very similar,
+        #but you need to be able to apply it to
+        #cells also
+
+        #mean fitness is appended to the end of fitness
+        #in evaluate
+
+        #then population[i].fitness[-1] used for mean fitness of each individual to select
+
+        #for fitness values in individuals
+            #for all cells in individual
+                #cell.fitness.append(individual_fitness)
+
+        #for all cells, take mean of fitness to be new fitness
+
+        #maybe append to end of fitness,
+        #then you can run through tournament selection if that
+        #is what we end up using
+
+        # it might be nice to have a list of active cell population
+        # or references to
+
+        # why might you want to select cells differently than individuals?
+        # harder to measure cell fitness, and more indirect
+        # because cell fitness is so stochastic
+
+        #you can write a function update cell fitness
+        #after evaluation is run
+
+        # do you actually want to prune the population of cells much?
+        # depends on how cells are selected
+        # maybe write a pruning function with options to
+        # prune in different ways
+
+
+        frames_since_mut = 0
+        num_frames = num_frames
+        epoch = epoch
+
+        # figure out what this does exactly
+        ctx = mp.get_context('spawn')
 
         while True:
             #select subset of micro population??
-            micro_population = evolve_population_micro(micro_population)
-            macro_population = evolve_population_macro(macro_population)
-            
+
+            for ind in individual_population:
+                ind.train_log['epoch'] = epoch
+
+            #these may still need to be rewritten because functions
+            #may not generalize, but should stay the same
+
+            # TODO FIX MULTIPROCESSING!
+            #EVALUATION
+            population_mean_fitness, population_var_fitness, eval_frames = \
+                self.log.log_func(self.eval.evaluate_population, population=population,
+                                  exploration_noise=self.cfg.eval.exploration_noise,
+                                  total_frames=num_frames, pool=pool)
+
+            #UPDATE CELL FITNESSES
+            self.update_cell_fitnesses(individual_population)
+            # Update mean cell fitnesses
+
+            # for all cells in population,
+            # take mean fitness value if in active population
+            self.update_cell_mean_fitness(cell_population)
+
+            # increment and log
+            num_frames += eval_frames
+            frames_since_mut += eval_frames
+            self.log.population_info(population_mean_fitness, population_var_fitness, population, num_frames, epoch)
+
+            #save populations
+            self.ckp.save_object(individual_population, name="individual_population")
+            self.ckp.save_object(cell_population, name="cell_population")
+            self.log.log("save population")
+            if not self.cfg.nevo.ind_memory:
+                rm_dict = self.replay_memory.save()
+                if isinstance(rm_dict, str):
+                    self.log("save replay memory failed")
+                else:
+                    self.log("replay memory size", len(rm_dict['memory']))
+                self.ckp.save_object([rm_dict], name="replay_memory")
+                self.log("save replay memory")
+
+            if num_frames >= self.cfg.train.num_frames:
+                break
+
+            # TOURNAMENT SELECTION
+            if self.cfg.nevo.selection:
+                elite, population = self.log.log_func(self.tournament.select, population)
+                test_fitness = self.eval.test_individual(elite, epoch)
+                self.log(f"##### ELITE INFO {epoch}", time_step=num_frames)
+                self.log("best_test_fitness", test_fitness, num_frames)
+
+
+            #parameter for mutation percentage
+            #MUTATION:...
+            #   MICRO MUTATION
+            #   MACRO MUTATION
+
+            #
+
+            #initialize population
 
 
 
