@@ -12,25 +12,35 @@ class TournamentSelection():
         winner = selection[np.argmax(selection_values)]
         return winner
 
+    def _reverse_tournament(self, fitness_values, tournament_size):
+        selection = np.random.randint(0, len(fitness_values), size=tournament_size)
+        selection_values = [fitness_values[i] for i in selection]
+        winner = selection[np.argmin(selection_values)]
+        return winner
+
     #def least_fit(self, population, percentage):
 
 
 
     def select_cell_population(self, cell_population, individual_population):
+        cell_population_max = self.cfg.cell.population_max
         if not self.cfg.cell.population_limit:
             print("Warning, cell population not limited")
             return cell_population
-        if len(cell_population) < self.cfg.cell.population_max:
+        if len(cell_population) < cell_population_max:
             return cell_population
 
         select_method = self.cfg.cell.select_method
+
+
         if select_method == 'tournament':
             elite, new_cell_population = self.select_ind(cell_population)
             return new_cell_population
 
         elif select_method == 'least_fit':
-            # remove as many inactive as possible
+            
             n_cell_pop = len(cell_population)
+            n_cells_to_remove = n_cell_pop - cell_population_max
 
             # (up to percent inactive)
             for cell in cell_population:
@@ -44,7 +54,8 @@ class TournamentSelection():
             percent_inferior = self.cfg.cell.percent_inferior
             assert(percent_inferior + percent_inactive == 100)
 
-            max_inactive_to_remove = round((percent_inactive / 100) * n_cell_pop)
+            # remove as many inactive as possible
+            max_inactive_to_remove = round((percent_inactive / 100) * n_cells_to_remove)
             inactive_cell_indices = []
             for i, cell in enumerate(cell_population):
                 inactive_cell_indices.append(i)
@@ -55,11 +66,17 @@ class TournamentSelection():
 
             #removes cells from population
             for index in sorted(indices_to_remove, reverse=True):
-                del cell_population[index]
+    del cell_population[index]
 
-            # remove remaining unfit population
-
-
+            # remove remaining unfit population using reverse tournament selection
+            n_cell_pop = len(cell_population)
+            n_cells_to_remove = n_cell_pop - cell_population_max
+            if n_cells_to_remove > 0:
+                cell_population = self.remove_ind(cell_population, n_cells_to_remove)
+                return cell_population
+            else:
+                return cell_population
+        
 
         #elif select_method == 'reverse_tournament':
         else:
@@ -107,3 +124,27 @@ class TournamentSelection():
             new_population.append(new_individual)
 
         return elite, new_population
+
+    #remove using reverse tournament selection
+    def remove_ind(self, population, n_remove):
+        if isinstance(population[0], EvolvableMLPCell):
+            last_fitness = [cell.mean_fitness for cell in population]
+            population_size = self.cfg.cell.population_max
+            tournament_size = self.cfg.cell.tournament_size
+        elif isinstance(population[0], IndividualMacro):
+            last_fitness = [indi.fitness[-1] for indi in population]
+            population_size = self.cfg.nevo.population_size
+            tournament_size = self.cfg.nevo.tournament_size
+        else:
+            raise Exception("population class unrecognized")
+
+        #returns rank in corresponding position
+        rank = np.argsort(last_fitness).argsort()
+
+        for idx in range(n_remove):
+            #remove population member
+            del population[self._reverse_tournament(rank, tournament_size)]
+
+        return population
+
+    

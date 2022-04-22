@@ -133,56 +133,8 @@ class SEARLforTD3():
             population.append(indi)
         return population
 
-    # TODO
-    def evolve_population_micro():
-        ctx = mp.get_context('spawn')
-        pool = ctx.Pool(processes=self.cfg.nevo.worker, maxtasksperchild=1000)
-        
-        for ind in population:
-            ind.train_log['epoch'] = epoch
 
-        # problems with selecting from the original
-        # population, could also be that you
-        # don't give mutations a chance to grow, and
-
-        # how do you evaluate a population of cells?
-        # you need to get the corresponding population of individuals, grouped by cell, and then
-        # evaluate the individuals, then return the fitness function for each cell
-        # you could do this one cell at a time
-        # for cell, find individuals, evaluate each, save fitness
-        # for now, I guess you can just find
-
-        # you could iterate through all the individuals, and find the corresponding ones with that cell
-        # or
-
-        #what order?
-
-        #evaluate population
-
-        #log population info
-
-        #save population
-
-        #tournament selection
-
-        #mutation
-
-        #training
-
-        pool.terminate()
-        pool.join()
-
-        #select some cells for mutation in population
-        population_subset = population#random subset
-
-
-        self.macro_mutation.mutation()
-
-
-
-        
-
-
+    """
     def evolve_population_macro(self, population, epoch=1, num_frames=0):
 
         frames_since_mut = 0
@@ -246,10 +198,12 @@ class SEARLforTD3():
 
         self.log("FINISH", time_step=num_frames)
         self.replay_memory.close()
+    """
 
     def close(self):
         self.replay_memory.close()
 
+    # TODO
     def evolve_hierarchical_SEARL(self, micro_population, macro_population):
 
         #potential issues:
@@ -318,8 +272,9 @@ class SEARLforTD3():
 
         while True:
             #select subset of micro population??
-
-            for ind in individual_population:
+            pool = ctx.Pool(processes=self.cfg.nevo.worker, maxtasksperchild=1000)
+            
+            for ind in macro_population:
                 ind.train_log['epoch'] = epoch
 
             #these may still need to be rewritten because functions
@@ -333,12 +288,12 @@ class SEARLforTD3():
                                   total_frames=num_frames, pool=pool)
 
             #UPDATE CELL FITNESSES
-            self.update_cell_fitnesses(individual_population)
+            self.update_cell_fitnesses(macro_population)
             # Update mean cell fitnesses
 
             # for all cells in population,
             # take mean fitness value if in active population
-            self.update_cell_mean_fitness(cell_population)
+            self.update_cell_mean_fitness(micro_population)
 
             # increment and log
             num_frames += eval_frames
@@ -346,8 +301,8 @@ class SEARLforTD3():
             self.log.population_info(population_mean_fitness, population_var_fitness, population, num_frames, epoch)
 
             #save populations
-            self.ckp.save_object(individual_population, name="individual_population")
-            self.ckp.save_object(cell_population, name="cell_population")
+            self.ckp.save_object(macro_population, name="individual_population")
+            self.ckp.save_object(micro_population, name="cell_population")
             self.log.log("save population")
             if not self.cfg.nevo.ind_memory:
                 rm_dict = self.replay_memory.save()
@@ -368,15 +323,15 @@ class SEARLforTD3():
                 self.log(f"##### ELITE INFO {epoch}", time_step=num_frames)
                 self.log("best_test_fitness", test_fitness, num_frames)
 
-
+            # TODO add mutations
             #parameter for mutation percentage
             #MUTATION:...
             #   MICRO MUTATION
             #   MACRO MUTATION
 
-            #
+            # TODO add training, using multiprocessing
 
-            #initialize population
+
 
 
 
@@ -392,4 +347,5 @@ def start_searl_td3_run(config, expt_dir):
         searl = SEARLforTD3(config=cfg, logger=log, checkpoint=sup.ckp)
 
         macro_population = searl.initial_population_macro()
-        searl.evolve_population_macro(macro_population)
+        micro_population = searl.initial_population_micro()
+        searl.evolve_hierarchical_SEARL(micro_population, macro_population)
