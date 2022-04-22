@@ -54,11 +54,11 @@ class TournamentSelection():
                             size = max_inactive_to_remove, replace = False).tolist()
 
             #removes cells from population
-            for index in soerted(indices_to_remove, reverse=True):
+            for index in sorted(indices_to_remove, reverse=True):
                 del cell_population[index]
 
             # remove remaining unfit population
-            
+
 
 
         #elif select_method == 'reverse_tournament':

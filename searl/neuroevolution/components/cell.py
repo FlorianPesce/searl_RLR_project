@@ -22,7 +22,13 @@ class EvolvableMLPCell(nn.Module):
         self.hidden_size = hidden_size
         self.net = self.create_net()
 
+
+
         # boolean cells that have been in individuals
+
+        # list of identical cell architectures (evolvableMlpCell)
+        # self.cell_copies_in_population
+
         self.active_population = False
         self.mean_fitness = None
 

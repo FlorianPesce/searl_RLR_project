@@ -363,7 +363,7 @@ class SEARLforTD3():
 
             # TOURNAMENT SELECTION
             if self.cfg.nevo.selection:
-                elite, population = self.log.log_func(self.tournament.select, population)
+                elite, population = self.log.log_func(self.tournament.select_ind, population)
                 test_fitness = self.eval.test_individual(elite, epoch)
                 self.log(f"##### ELITE INFO {epoch}", time_step=num_frames)
                 self.log("best_test_fitness", test_fitness, num_frames)
