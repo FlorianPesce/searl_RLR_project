@@ -113,3 +113,30 @@ cell:
   output_activation:       'linear'
   layer_norm:              True
   output_vanish:           False
+  #boolean maintain original population after mutations
+  keep_original_population: False
+
+  #method to insert cells into population
+  #epsilon greedy (either random or mean fitness
+  insertion_method:
+  epsilon:                .8
+  #boolean keep population below this size
+  population_limit:
+  #if population limit,
+  #remove cells over this maximum
+  population_max:
+  #removes all unreferenced cells
+  #selection methods for cells
+  #OPTIONS: 'least_fit', 'tournament', 'reverse tournament', 'random'
+  select_method:
+  #out of all the cells that are removed,
+  #what percent will be inferior, and what percent will be inactive
+  #percentage of inactive cells to remove
+  percent_inactive:
+  #percentage of inferior cells to remove
+  percent_inferior:
+  #remove_inactive:
+  #keep unused cells
+  #keep_unused:
+  #remove cells with poor fitness
+  #remove_inferior:

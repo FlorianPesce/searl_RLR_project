@@ -17,10 +17,26 @@ class EvolvableMLPCell(nn.Module):
         self.output_activation = output_activation
         self.layer_norm = layer_norm
         self.output_vanish = output_vanish
+        # self.ID_num =
 
         self.hidden_size = hidden_size
-
         self.net = self.create_net()
+
+
+
+        # boolean cells that have been in individuals
+
+        # list of identical cell architectures (evolvableMlpCell)
+        # self.cell_copies_in_population
+
+        self.active_population = False
+        self.mean_fitness = None
+
+        self.fitness = []
+        self.improvement = 0
+
+        self.train_log = {"pre_fitness": None, "pre_rank": None, "post_fitness": None, "post_rank": None, "eval_eps": 0,
+                          "index": None, "parent_index": None, "mutation": None}
 
         if stored_values is not None:
             self.inject_parameters(pvec=stored_values, without_layer_norm=False)
