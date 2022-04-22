@@ -22,19 +22,7 @@ class EvolvableMLPCell(nn.Module):
         self.hidden_size = hidden_size
         self.net = self.create_net()
 
-
-
-        # boolean cells that have been in individuals
-
-        # list of identical cell architectures (evolvableMlpCell)
-        # self.cell_copies_in_population
-
-        self.active_population = False
-        self.mean_fitness = None
-
-        self.fitness = []
-        self.improvement = 0
-
+        self.fitness = None
         self.train_log = {"pre_fitness": None, "pre_rank": None, "post_fitness": None, "post_rank": None, "eval_eps": 0,
                           "index": None, "parent_index": None, "mutation": None}
 
@@ -260,3 +248,9 @@ class EvolvableMLPCell(nn.Module):
                             min_1 = min(old_size[1], new_size[1])
                             param.data[:min_0, :min_1] = old_net_dict[key].data[:min_0, :min_1]
         return new_net
+
+    def set_fitness(self, fitness: float) -> None:
+        self.fitness = fitness
+
+    def get_fitness(self) -> float:
+        return self.fitness
