@@ -60,6 +60,10 @@ class EvolvableMacroNetwork(nn.Module):
                 cell.fitness.append(mean_fitness)
                 cell.active_population = True
 
+    def update_active_population(self):
+        for layer in self.layers:
+            for cell in layer.cells:
+                cell.active_population = True
 
 
 

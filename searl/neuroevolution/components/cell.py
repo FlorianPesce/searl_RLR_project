@@ -20,7 +20,6 @@ class EvolvableMLPCell(nn.Module):
         # self.ID_num =
 
         self.hidden_size = hidden_size
-
         self.net = self.create_net()
 
         # boolean cells that have been in individuals

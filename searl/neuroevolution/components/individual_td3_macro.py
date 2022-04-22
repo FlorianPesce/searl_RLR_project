@@ -37,6 +37,10 @@ class IndividualMacro():
         self.critic_1.update_cell_fitnesses(self.fitness[-1])
         self.critic_2.update_cell_fitnesses(self.fitness[-1])
 
+    def update_active_population(self):
+        self.actor.update_active_population()
+        self.critic_1.update_active_population()
+        self.critic_2.update_active_population()
 
     def clone(self, index=None):
         if index is None:
