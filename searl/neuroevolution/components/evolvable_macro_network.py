@@ -52,6 +52,7 @@ class EvolvableMacroNetwork(nn.Module):
         self.num_outputs = num_outputs
         self.activation = activation
         self.output_activation = output_activation
+        self.contained_active_population = set()
 
     def update_cell_fitnesses(self, mean_fitness):
 
@@ -59,6 +60,14 @@ class EvolvableMacroNetwork(nn.Module):
             for cell in layer.cells:
                 cell.fitness.append(mean_fitness)
                 cell.active_population = True
+
+    def get_active_population(self):
+        active_population = set()
+        for layer in self.layers:
+            for cell in layer.cells:
+                active_population.add(cell.id)
+        self.contained_active_population = active_population
+        return active_population
 
     def update_active_population(self):
         for layer in self.layers:
@@ -71,6 +80,7 @@ class EvolvableMacroNetwork(nn.Module):
 
     #returns an ordered dict of macrolayers and 
     #macro layer connections
+    # Todo: in future if we do arbitrary connections between cells, create special linear layer class for this so that we can keep using nn.sequential
     def create_net(self) -> OrderedDict:
         net_dict = OrderedDict()
 
@@ -96,7 +106,9 @@ class EvolvableMacroNetwork(nn.Module):
         net_dict[f'linear_layer_output'] = nn.Linear(sum(lastlayer_outdim), self.num_outputs)
         net_dict[f'activation_output'] = self.output_activation
 
-        return net_dict
+        #return net_dict
+        #not sure if this will work with nn.sequential
+        return nn.sequential(net_dict)
 
     #divides tensor into a list of tensors with dimensions
     #specified in dims_list
@@ -108,7 +120,7 @@ class EvolvableMacroNetwork(nn.Module):
     def combine_tensor(self, x: List[torch.Tensor]) -> torch.Tensor:
         return torch.cat(x, dim = -1)
 
-
+    """
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if not isinstance(x, torch.Tensor):
             x = torch.FloatTensor(x)
@@ -127,6 +139,7 @@ class EvolvableMacroNetwork(nn.Module):
                 x = self.net[layer](x)
             
         return x
+    """
 
     def add_layer(self, layer: Optional[MacroLayer] = None):
         if layer:
@@ -136,6 +149,28 @@ class EvolvableMacroNetwork(nn.Module):
         else:
             self.layers.append(layer)
 
+    #add cell to random layer
+    def add_cell(self, cell):
+
+    def clone(self):
+        clone = EvolvableMacroNetwork(**copy.deepcopy(self.init_dict))
+        clone.load_state_dict(self.state_dict())
+        return clone
+
+
+    # Probably easiest to pop a cell off of the end of the network
+    # so you don't need to mess with preserve parameters
+    #def remove_cell
+
+    #this sets preserved parameters to be at the
+    #beginning of new layer
+    #so add or remove cells from the end of the list
+    #to avoid complications
+
+    #one way to debug this could be to create the module
+    #for the linear connector layers. make that a module list
+    #of linear layers between cells, so when you call preserve parameters
+    #you can copy linear layers directly to linear layers
     def preserve_parameters(self, old_net, new_net):
 
         old_net_dict = dict(old_net.named_parameters())
@@ -152,16 +187,17 @@ class EvolvableMacroNetwork(nn.Module):
                             param.data[:min(old_size[0], new_size[0])] = old_net_dict[key].data[
                                                                          :min(old_size[0], new_size[0])]
                         else:
-                            param.data[:min(old_size[0], new_size[0]), :min(old_size[1], new_size[1])] = old_net_dict[
-                                                                                                             key].data[
-                                                                                                         :min(old_size[
-                                                                                                                  0],
-                                                                                                              new_size[
-                                                                                                                  0]),
-                                                                                                         :min(old_size[
-                                                                                                                  1],
-                                                                                                              new_size[
-                                                                                                                  1])]
+                            param.data[:min(old_size[0], new_size[0]),
+                                                    :min(old_size[1], new_size[1])] = old_net_dict[
+                                                                     key].data[
+                                                                 :min(old_size[
+                                                                          0],
+                                                                      new_size[
+                                                                          0]),
+                                                                 :min(old_size[
+                                                                          1],
+                                                                      new_size[
+                                                                          1])]
 
         return new_net
 
@@ -184,6 +220,4 @@ class EvolvableMacroNetwork(nn.Module):
                             min_1 = min(old_size[1], new_size[1])
                             param.data[:min_0, :min_1] = old_net_dict[key].data[:min_0, :min_1]
         return new_net
-
-    
 
