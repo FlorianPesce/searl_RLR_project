@@ -64,14 +64,18 @@ class SEARLforTD3():
             ind.update_cell_fitnesses()
 
     # Todo: determine whether or not fitness is copied
-    def copy_individuals(self, population):
+    def copy_individuals_with_cell(self, individuals_with_cell, cell_ids):
         assert(len(population) > 0)
-        assert(isinstance(population[0], IndividualMacro))
-        copies = []
-        for ind in population:
-            clone = ind.clone()
-            copies.append(clone)
-        return copies
+        assert(isinstance(individuals_with_cell[cell_ids[0]][0], IndividualMacro))
+
+        ind_w_cell_copy = {}
+        for cid in cell_ids:
+            ind_w_cell_copy[cid] = []
+
+        for cid in cell_ids:
+            for ind in individuals_with_cell[cid]
+                ind_w_cell_copy[cid].append(ind.clone())
+        return ind_w_cell_copy
 
 
     def get_cell_active_population(self, population):
@@ -88,11 +92,14 @@ class SEARLforTD3():
         assert(type(cell_ids[0]) == int)
         assert(isinstance(macro_population[0], IndividualMacro))
 
-        individuals_with_cell = []
+        individuals_with_cell = {}
         for cid in cell_ids:
-            for ind in populatin:
+            individuals_with_cell[cid] = []
+
+        for cid in cell_ids:
+            for ind in macro_population:
                 if ind.contains_cell(cid)
-                    individuals_with_cell.append(ind)
+                    individuals_with_cell[cid].append(ind)
         return individuals_with_cell
 
 
@@ -360,25 +367,39 @@ class SEARLforTD3():
             #parameter for mutation percentage
             #MUTATION:...
             #   MICRO MUTATION
-            cell_active_population = self.get_cell_active_population(macro_population)
-            n_cells = len(cell_active_population)
-            cell_active_population_arr = np.array(list(cell_active_population))
+            if self.cfg.nevo.micro_mutation:
+                #set of cell ids (integers)
+                cell_active_population = self.get_cell_active_population(macro_population)
+                n_cells = len(cell_active_population)
+                cell_active_population_arr = np.array(list(cell_active_population))
 
-            #choose cells for mutation with replacement
-            #note we could add a config for with/without replacement
-            cells_for_mutation = np.random.choice(cell_active_population_arr,
-                                                  size = min(n_cells, n_cells_mutate), replace = True)
+                #choose cells for mutation with replacement
+                #note we could add a config for with/without replacement
+                cells_for_mutation = np.random.choice(cell_active_population_arr,
+                                                    size = min(n_cells, n_cells_mutate), replace = True)
 
-            #copy individuals with cell
-            individuals_with_cell = self.get_individuals_with_cell(macro_population, cells_for_mutation)
-            copied_individuals_with_cell = self.copy_individuals(individuals_with_cell)
+                #copy individuals with cell
+                #dictionary mapping cid to list of individuals
+                individuals_with_cell = self.get_individuals_with_cell(macro_population, cells_for_mutation)
+                copied_individuals_with_cell = self.copy_individuals_with_cell(individuals_with_cell)
+            
+                # TODO Mutate Corresponding cells
+                # watch out for dimension change within 
+                # issue: how to track, change parent cell
+                # we copied all the cells in the individuals
+                # but you mutate the individual_micro class
+                # so you need to copy 
 
             #   MACRO MUTATION
+            if self.cfg.nevo.macro_mutation:
+                # TODO get the entire population including copies from micro mutations in here
+                population = self.log.log_func(self.macro_mutation.mutation, population)
 
-            # TODO add training, using multiprocessing
-
-
-
+            #   TRAINING
+            if self.cfg.nevo.training:
+                # TODO same thing, get the entire population incl. copies
+                population = self.log.log_func(self.training.train, population=population, eval_frames=eval_frames,
+                                               pool=pool)
 
 
 def start_searl_td3_run(config, expt_dir):

@@ -159,6 +159,10 @@ cell:
   percent_inactive:
   #percentage of inferior cells to remove
   percent_inferior:
+  #IF THERE ARE MULTIPLE COPIES OF A CELL IN INDIVIDUAL
+  #DO YOU LIMIT HOW MANY YOU CHANGE
+  limit_cell_changes:     False
+  change_cell_number:     1
   #remove_inactive:
   #keep unused cells
   #keep_unused:
