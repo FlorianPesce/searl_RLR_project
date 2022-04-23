@@ -13,7 +13,6 @@ class TournamentSelection():
         winner = selection[np.argmax(selection_values)]
         return winner
 
-
     def select(self, population):
         last_fitness = [indi.fitness[-1] for indi in population]
         #returns indices of rank (indices that would sort array)

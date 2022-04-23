@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 class EvolvableMLPCell(nn.Module):
-    def __init__(self, num_inputs: int, num_outputs: int, hidden_size: List[int], activation='relu',
+    def __init__(self,id: int, num_inputs: int, num_outputs: int, hidden_size: List[int], activation='relu',
                  output_activation=None, layer_norm=False, output_vanish=True, stored_values=None):
         super(EvolvableMLPCell, self).__init__()
 
@@ -17,7 +17,7 @@ class EvolvableMLPCell(nn.Module):
         self.output_activation = output_activation
         self.layer_norm = layer_norm
         self.output_vanish = output_vanish
-        # self.ID_num =
+        self.id = id
 
         self.hidden_size = hidden_size
         self.net = self.create_net()
@@ -195,6 +195,7 @@ class EvolvableMLPCell(nn.Module):
 
         return {"hidden_layer": hidden_layer, "numb_new_nodes": numb_new_nodes}
 
+    #this won't work once we add convolutional layers
     def clone(self):
         clone = EvolvableMLPCell(**copy.deepcopy(self.init_dict))
         clone.load_state_dict(self.state_dict())

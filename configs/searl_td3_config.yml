@@ -26,7 +26,30 @@ nevo:
   cell_pop_size:                20
 
 
-mutation:
+#mutation:
+#  no_mutation:                  0.2
+#  parameters:                   0.2
+#  architecture:                 0.2
+#  activation:                   0.2
+#  rl_hyperparam:                0.2
+#  rl_hp_selection:              ['lr_actor','lr_critic'] # 'train_frames_fraction','batch_size',,'td3_policy_noise','td3_update_freq', 'optimizer']
+  # new_layer_prob:               0.2
+#  mutation_sd:                  0.1
+
+
+micro_mutation:
+  no_mutation:                  0.2
+  #do we want to mutate cell parameters individually??
+  #parameters:                   0.2
+  architecture:                 0.2
+  activation:                   0.2
+  #not possible
+  #rl_hyperparam:                0.2
+  #rl_hp_selection:              ['lr_actor','lr_critic'] # 'train_frames_fraction','batch_size',,'td3_policy_noise','td3_update_freq', 'optimizer']
+  # new_layer_prob:               0.2
+  mutation_sd:                  0.1
+
+macro_mutation:
   no_mutation:                  0.2
   parameters:                   0.2
   architecture:                 0.2
@@ -35,6 +58,7 @@ mutation:
   rl_hp_selection:              ['lr_actor','lr_critic'] # 'train_frames_fraction','batch_size',,'td3_policy_noise','td3_update_freq', 'optimizer']
   # new_layer_prob:               0.2
   mutation_sd:                  0.1
+
 
 
 train:

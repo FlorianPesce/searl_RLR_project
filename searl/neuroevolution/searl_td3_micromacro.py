@@ -63,6 +63,39 @@ class SEARLforTD3():
         for ind in population:
             ind.update_cell_fitnesses()
 
+    # Todo: determine whether or not fitness is copied
+    def copy_individuals(self, population):
+        assert(len(population) > 0)
+        assert(isinstance(population[0], IndividualMacro))
+        copies = []
+        for ind in population:
+            clone = ind.clone()
+            copies.append(clone)
+        return copies
+
+
+    def get_cell_active_population(self, population):
+        assert(len(population) > 0)
+        assert(isinstance(population[0], IndividualMacro))
+
+        cell_active_population = set()
+        for ind in population:
+            cell_active_population.union(ind.get_active_population)
+        return cell_active_population
+
+    def get_individuals_with_cell(self, macro_population, cell_ids):
+        assert(len(macro_population) > 0)
+        assert(type(cell_ids[0]) == int)
+        assert(isinstance(macro_population[0], IndividualMacro))
+
+        individuals_with_cell = []
+        for cid in cell_ids:
+            for ind in populatin:
+                if ind.contains_cell(cid)
+                    individuals_with_cell.append(ind)
+        return individuals_with_cell
+
+
     def update_cell_mean_fitness(self, cell_population):
         assert(len(cell_population > 0))
         assert(isinstance(cell_population[0], EvolvableMLPCell))
@@ -204,7 +237,7 @@ class SEARLforTD3():
         self.replay_memory.close()
 
     # TODO
-    def evolve_hierarchical_SEARL(self, micro_population, macro_population):
+    def evolve_hierarchical_SEARL(self, micro_population, macro_population, n_cells_mutate):
 
         #potential issues:
 
@@ -327,6 +360,19 @@ class SEARLforTD3():
             #parameter for mutation percentage
             #MUTATION:...
             #   MICRO MUTATION
+            cell_active_population = self.get_cell_active_population(macro_population)
+            n_cells = len(cell_active_population)
+            cell_active_population_arr = np.array(list(cell_active_population))
+
+            #choose cells for mutation with replacement
+            #note we could add a config for with/without replacement
+            cells_for_mutation = np.random.choice(cell_active_population_arr,
+                                                  size = min(n_cells, n_cells_mutate), replace = True)
+
+            #copy individuals with cell
+            individuals_with_cell = self.get_individuals_with_cell(macro_population, cells_for_mutation)
+            copied_individuals_with_cell = self.copy_individuals(individuals_with_cell)
+
             #   MACRO MUTATION
 
             # TODO add training, using multiprocessing

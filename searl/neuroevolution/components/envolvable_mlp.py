@@ -203,7 +203,9 @@ class EvolvableMLP(nn.Module):
 
         for key, param in new_net.named_parameters():
             if key in old_net_dict.keys():
+                #if the parameters are the same size
                 if old_net_dict[key].data.size() == param.data.size():
+                    #copy params
                     param.data = old_net_dict[key].data
                 else:
                     if not "norm" in key:
@@ -213,16 +215,17 @@ class EvolvableMLP(nn.Module):
                             param.data[:min(old_size[0], new_size[0])] = old_net_dict[key].data[
                                                                          :min(old_size[0], new_size[0])]
                         else:
-                            param.data[:min(old_size[0], new_size[0]), :min(old_size[1], new_size[1])] = old_net_dict[
-                                                                                                             key].data[
-                                                                                                         :min(old_size[
-                                                                                                                  0],
-                                                                                                              new_size[
-                                                                                                                  0]),
-                                                                                                         :min(old_size[
-                                                                                                                  1],
-                                                                                                              new_size[
-                                                                                                                  1])]
+                            param.data[:min(old_size[0], new_size[0]),
+                                    :min(old_size[1], new_size[1])] = old_net_dict[
+                                                             key].data[
+                                                         :min(old_size[
+                                                                  0],
+                                                              new_size[
+                                                                  0]),
+                                                         :min(old_size[
+                                                                  1],
+                                                              new_size[
+                                                                  1])]
 
         return new_net
 

@@ -66,7 +66,7 @@ class TournamentSelection():
 
             #removes cells from population
             for index in sorted(indices_to_remove, reverse=True):
-    del cell_population[index]
+                del cell_population[index]
 
             # remove remaining unfit population using reverse tournament selection
             n_cell_pop = len(cell_population)

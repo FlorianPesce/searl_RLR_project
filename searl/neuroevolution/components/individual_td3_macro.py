@@ -42,7 +42,20 @@ class IndividualMacro():
         self.critic_1.update_active_population()
         self.critic_2.update_active_population()
 
-    def clone(self, index=None):
+    def get_active_population(self):
+        s1 = self.actor.get_active_population()
+        s2 = self.critic_1.get_active_population()
+        s3 = self.critic_2.get_active_population()
+        return s1.union(s2,s3)
+
+    #returns boolean does this individual contain this cell
+    def contains_cell(self, cell_id):
+        assert(type(cell_id) == int)
+        return cell_id in self.actor.contained_active_population or \
+                cell_id in self.critic_1.contained_active_population or \
+                cell_id in self.critic_2.contained_active_population
+
+    def clone(self, index=None, copy_fitness = False):
         if index is None:
             index = self.index
 
@@ -61,7 +74,9 @@ class IndividualMacro():
                            critic_2_config=critic_2_config,
                            replay_memory=self.replay_memory)
 
-        clone.fitness = copy.deepcopy(self.fitness)
+        if copy_fitness:
+            clone.fitness = copy.deepcopy(self.fitness)
+
         clone.train_log = copy.deepcopy(self.train_log)
         clone.actor = self.actor.clone()
         clone.critic_1 = self.critic_1.clone()
