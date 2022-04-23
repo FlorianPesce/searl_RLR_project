@@ -1,5 +1,6 @@
 import fastrand
 import numpy as np
+import copy
 
 class MicroMutations():
     def __init__(self, config, replay_sample_queue):
@@ -7,14 +8,7 @@ class MicroMutations():
         self.rng = np.random.RandomState(self.cfg.seed.mutation)
         self.replay_sample_queue = replay_sample_queue
 
-    # TODO
-
-    # why is this defined twice?
-    def no_mutation_layer(self, layer):
-        individual.train_log["mutation"] = "no_mutation"
-        return individual 
-
-    def no_mutation_cell(self, individual_micro):
+    def no_mutation(self, individual_micro):
         individual_micro.train_log["mutation"] = "no_mutation"
         return individual_micro
 
@@ -105,12 +99,12 @@ class MicroMutations():
         #returns clone of individual
         #individual = individual.clone()
         clone = individual.clone_without_cell_copies()
-        for cell in individual.cell_copies_in_population:
+        for cell in individual.cell_copies_is, cell_idsn_population:
             new_individual = self._permutate_activation(cell)
             clone.cell_copies_in_population.add(new_individual)
 
-        clone.train_log["mutation"] = "activation"
-        return clone
+        for ind in individuals
+
 
     def _permutate_activation(self, network):
         possible_activations = ['relu', 'elu', 'tanh']

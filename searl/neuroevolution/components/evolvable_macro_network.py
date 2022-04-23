@@ -74,8 +74,25 @@ class EvolvableMacroNetwork(nn.Module):
             for cell in layer.cells:
                 cell.active_population = True
 
+    def get_cells(self, cell_id):
+        cells = []
 
+        for layer in self.layers:
+            for cell in layer.cells:
 
+                if cell.id == cell_id
+                    cells.append(cell)
+
+    @property
+    def init_dict(self):
+        init_dict = {"num_inputs": self.num_inputs, "num_outputs": self.num_outputs, 
+                     "activation": self.activation, "output_activation": self.output_activation}
+        return init_dict
+
+    @property
+    def short_dict(self):
+        short_dict = {"activation": self.activation, "output_activation": self.output_activation}
+        return short_dict
 
 
     #returns an ordered dict of macrolayers and 
@@ -108,7 +125,7 @@ class EvolvableMacroNetwork(nn.Module):
 
         #return net_dict
         #not sure if this will work with nn.sequential
-        return nn.sequential(net_dict)
+        return nn.Sequential(net_dict)
 
     #divides tensor into a list of tensors with dimensions
     #specified in dims_list
