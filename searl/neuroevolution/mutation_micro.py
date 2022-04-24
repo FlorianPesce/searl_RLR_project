@@ -94,16 +94,13 @@ class MicroMutations():
         return individual
     """
 
-    def activation_mutation(self, individual):
+    def activation_mutation(self, cell):
         #TODO copy all cells then mutate
         #returns clone of individual
         #individual = individual.clone()
-        clone = individual.clone_without_cell_copies()
-        for cell in individual.cell_copies_is, cell_idsn_population:
-            new_individual = self._permutate_activation(cell)
-            clone.cell_copies_in_population.add(new_individual)
 
-        for ind in individuals
+        cell = self._permutate_activation(cell)
+        return cell
 
 
     def _permutate_activation(self, network):
@@ -114,7 +111,7 @@ class MicroMutations():
         new_activation = self.rng.choice(possible_activations, size=1)[0]
         #new_network = network.clone()
         
-        net_dict = copy.deepcopy(network.init_dict)
+        #net_dict = copy.deepcopy(network.init_dict)
         net_dict['activation'] = new_activation
         #new cell network created here
         new_network = type(network)(**net_dict)

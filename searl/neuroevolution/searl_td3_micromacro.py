@@ -102,6 +102,38 @@ class SEARLforTD3():
                     individuals_with_cell[cid].append(ind)
         return individuals_with_cell
 
+    def copy_ind_micro_cell_class_without_cells(self, cell_population):
+        new_cells = []
+        for cell in cell_population:
+            new_cells.append(cell.clone_without_cell_copies())
+        return new_cells
+
+    def merge_new_cells_copied_individuals(self, new_cells, copied_individuals):
+        #note cell here is the micro class, not underlying
+        #for all cells
+        for cell in new_cells:
+            cid = cell.id
+            #for individuals in that cell
+            for ind in copied_individuals[cid]:
+                cells_in_ind = ind.get_cells(cid)
+                #get cells of that type, and add to the new cell
+                for ev_MLPCell in cells_in_ind:
+                    cell.cell_copies_in_population.append(ev_MLPCell)
+
+    #
+    def get_cells_from_cell_ids(self, cell_population, cell_ids):
+        cell_ids = set(cell_ids)
+        in_cell_ids = []
+        not_in_cell_ids = []
+        for cell in cell_population:
+            if cell.id in cell_ids:
+                in_cell_ids.append(cell)
+            else:
+                not_in_cell_ids.append(cell)
+
+        return in_cell_ids, not_in_cell_ids
+
+
 
     def update_cell_mean_fitness(self, cell_population):
         assert(len(cell_population > 0))
@@ -323,7 +355,7 @@ class SEARLforTD3():
             # TODO FIX MULTIPROCESSING!
             #EVALUATION
             population_mean_fitness, population_var_fitness, eval_frames = \
-                self.log.log_func(self.eval.evaluate_population, population=population,
+                self.log.log_func(self.eval.evaluate_population, population=macro_population,
                                   exploration_noise=self.cfg.eval.exploration_noise,
                                   total_frames=num_frames, pool=pool)
 
@@ -376,19 +408,48 @@ class SEARLforTD3():
                 #choose cells for mutation with replacement
                 #note we could add a config for with/without replacement
                 cells_for_mutation = np.random.choice(cell_active_population_arr,
-                                                    size = min(n_cells, n_cells_mutate), replace = True)
+                                                    size = min(n_cells, n_cells_mutate), replace = True).tolist()
 
-                #copy individuals with cell
-                #dictionary mapping cid to list of individuals
+                #get individuals with cell
+                #dictionary mapping cell_id to list of individuals
                 individuals_with_cell = self.get_individuals_with_cell(macro_population, cells_for_mutation)
-                copied_individuals_with_cell = self.copy_individuals_with_cell(individuals_with_cell)
-            
+
+                #copy individuals
+                copied_individuals_with_cell = self.copy_individuals_with_cell(individuals_with_cell, cells_for_mutation)
+
+                #get cell classes
+                cell_pop_for_mutation, cell_pop_not_for_mutation =\
+                                self.get_cells_from_cell_ids(micro_population, cells_for_mutation)
+
+                #copy cell classes
+                cell_class_copies_no_reference_cells = self.copy_ind_micro_cell_class_without_cells(cell_pop_for_mutation)
+
+                #adds the cells from the copied individuals to the corresponding copied
+                #cell classes
+                #in here you could incorporate some limit for how many cells get mutated in an individual
+                #but then the new cells need to be added back to the original cell class instead of the
+                #copied one. otherwise they won't be referenced.
+                self.merge_new_cells_copied_individuals(cell_class_copies_no_reference_cells,
+                                                        copied_individuals_with_cell)
+
+                #Todo: make sure in mutations, cells arent referenced elsewhere
+                #need n
+                #modify
+
+                #now we can pass cell classes for mutation
+                #within each cell class, something like
+                #for all evolvableMLPCell, apply mutation
+
                 # TODO Mutate Corresponding cells
                 # watch out for dimension change within 
                 # issue: how to track, change parent cell
                 # we copied all the cells in the individuals
                 # but you mutate the individual_micro class
-                # so you need to copy 
+                # so you need to copy
+
+                #copy individual_micro classes (without cells)
+                #append corresponding cells from copied individuals (for mutation)
+                #here, if you don't want to mutate any of these cells, append them to the original class
 
             #   MACRO MUTATION
             if self.cfg.nevo.macro_mutation:
