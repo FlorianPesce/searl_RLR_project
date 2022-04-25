@@ -1,12 +1,13 @@
 import numpy as np
+from __future__ import annotations
 
 #one instance of this for all unique cells
 class IndividualMicro():
     def __init__(self, id) -> None:
 
         # set of identical cell architectures (evolvableMlpCell)
-        #set of EvolvableMLPCells
-        #one for each copy of a cell
+        # set of EvolvableMLPCells
+        # one for each copy of a cell
         self.cell_copies_in_population = []
         self.active_population = False #list of evolvable mlp cells which 
         self.mean_fitness = None
@@ -24,7 +25,7 @@ class IndividualMicro():
             [ind.fitness for ind in self.cell_copies_in_population])
         return self.mean_fitness
 
-    def clone(self):
+    def clone(self) -> IndividualMicro:
         clone = type(self)()
         for cell in self.cell_copies_in_population:
             cloned_cell = cell.clone()
@@ -36,7 +37,7 @@ class IndividualMicro():
 
         return clone
 
-    def clone_without_cell_copies(self):
+    def clone_without_cell_copies(self) -> IndividualMicro:
         clone = type(self)()
 
         clone.active_population = self.active_population
