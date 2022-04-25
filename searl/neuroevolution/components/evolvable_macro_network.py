@@ -1,12 +1,13 @@
+import copy
 from collections import OrderedDict
-from typing import List, Optional
+from typing import Dict, List, Optional, Set
 
 import numpy as np
 import torch
 import torch.nn as nn
 
+from cell import EvolvableMLPCell
 from macro_layer import MacroLayer
-
 
 #mutate individuals, test individuals select best individuals
 
@@ -54,14 +55,13 @@ class EvolvableMacroNetwork(nn.Module):
         self.output_activation = output_activation
         self.contained_active_population = set()
 
-    def update_cell_fitnesses(self, mean_fitness):
-
+    def update_cell_fitnesses(self, mean_fitness) -> None:
         for layer in self.layers:
             for cell in layer.cells:
                 cell.fitness.append(mean_fitness)
                 cell.active_population = True
 
-    def get_active_population(self):
+    def get_active_population(self) -> Set[int]:
         active_population = set()
         for layer in self.layers:
             for cell in layer.cells:
@@ -69,28 +69,27 @@ class EvolvableMacroNetwork(nn.Module):
         self.contained_active_population = active_population
         return active_population
 
-    def update_active_population(self):
+    def update_active_population(self) -> None:
         for layer in self.layers:
             for cell in layer.cells:
                 cell.active_population = True
 
-    def get_cells(self, cell_id):
+    def get_cells(self, cell_id: int) -> List[EvolvableMLPCell]:
         cells = []
-
         for layer in self.layers:
             for cell in layer.cells:
-
-                if cell.id == cell_id
+                if cell.id == cell_id:
                     cells.append(cell)
+        return cells
 
     @property
-    def init_dict(self):
+    def init_dict(self) -> Dict:
         init_dict = {"num_inputs": self.num_inputs, "num_outputs": self.num_outputs, 
                      "activation": self.activation, "output_activation": self.output_activation}
         return init_dict
 
     @property
-    def short_dict(self):
+    def short_dict(self) -> Dict:
         short_dict = {"activation": self.activation, "output_activation": self.output_activation}
         return short_dict
 
@@ -111,8 +110,8 @@ class EvolvableMacroNetwork(nn.Module):
             #add layer to ordered dict and layer connection to ordered dict
             net_dict[f'layer_{i}'] = self.layers[i]
             output_dims = self.layers[i].get_output_dims()
-            input_dims = self.layers[i].get_input_dims()
-            net_dict[f'linear_layer_{i}'] = nn.Linear(sum(input_dims), sum(output_dims))
+            input_dims = self.layers[i+1].get_input_dims()
+            net_dict[f'linear_layer_{i}'] = nn.Linear(sum(output_dims), sum(input_dims))
             net_dict[f'activation{i}'] = self.activation
 
         lastlayer_index = len(self.layers) - 1
@@ -125,17 +124,14 @@ class EvolvableMacroNetwork(nn.Module):
 
         #return net_dict
         #not sure if this will work with nn.sequential
+        # TODO if it doesn't work, we should implement our own class that inherits from ModuleDict
+        # and implement a forward function
         return nn.Sequential(net_dict)
 
     #divides tensor into a list of tensors with dimensions
     #specified in dims_list
     def split_tensor(self, x: torch.Tensor, dims_list: List[int]) -> List[torch.Tensor]:
         return list(torch.split(x, split_size_or_sections=dims_list, dim = -1))
-
-    #concatenate list of tensors in first or last dimension
-    #return tensor
-    def combine_tensor(self, x: List[torch.Tensor]) -> torch.Tensor:
-        return torch.cat(x, dim = -1)
 
     """
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -150,7 +146,7 @@ class EvolvableMacroNetwork(nn.Module):
             if layer.startswith("layer_"):
                 x = self.split_tensor(x, self.net[layer].get_input_dims())
                 x = self.net[layer](x)
-                x = self.combine_tensor(x)
+                x = torch.cat(x, dim = 1)
             
             else:
                 x = self.net[layer](x)
@@ -166,6 +162,7 @@ class EvolvableMacroNetwork(nn.Module):
         else:
             self.layers.append(layer)
 
+    # TODO
     #add cell to random layer
     def add_cell(self, cell):
 

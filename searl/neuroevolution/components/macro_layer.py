@@ -1,11 +1,14 @@
 from typing import List
 
-import numpy as np
 import torch
 import torch.nn as nn
 
 from searl.neuroevolution.components.cell import EvolvableMLPCell
 
+# should we implement MacroLayer as a Module with a ModuleList cells attribute,
+# or should we implement MacroLayer as a ModuleList directly?
+# issue is I am not sure the Cell parameters will be recognized as parameters of
+# EvolvableMacroNetwork. Should be an easy change anyway. 
 
 class MacroLayer(nn.Module):
     def __init__(self, cells: List[EvolvableMLPCell]):
@@ -23,15 +26,14 @@ class MacroLayer(nn.Module):
 
     def forward(self, x: torch.Tensor):
         input_dims = self.get_input_dims()
-        x= self.split_tensor(x=x,dims_list=input_dims)
+        x = self.split_tensor(x=x, dims_list=input_dims)
         for i in range(len(x)):
             if not isinstance(x[i], torch.Tensor):
                 x[i] = torch.FloatTensor(x[i])
-                output_list[i] = self.cells[i](x[i])
+            x[i] = self.cells[i](x[i])
 
-        #new addition to combine the tensor
-        return torch.cat(output_list, dim = -1)
-
+        # new addition to combine the tensor
+        return torch.cat(x, dim=-1)
 
 
     """

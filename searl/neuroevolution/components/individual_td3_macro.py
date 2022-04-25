@@ -35,18 +35,28 @@ class IndividualMacro():
     def update_cell_fitnesses(self):
         self.actor.update_cell_fitnesses(self.fitness[-1])
         self.critic_1.update_cell_fitnesses(self.fitness[-1])
-        self.critic_2.update_cell_fitnesses(self.fitness[-1])
+        if hasattr(self, 'critic_2'):
+            self.critic_2.update_cell_fitnesses(self.fitness[-1])
 
     def update_active_population(self):
         self.actor.update_active_population()
         self.critic_1.update_active_population()
-        self.critic_2.update_active_population()
+        if hasattr(self, 'critic_2'):
+            self.critic_2.update_active_population()
 
     def get_active_population(self):
         s1 = self.actor.get_active_population()
         s2 = self.critic_1.get_active_population()
-        s3 = self.critic_2.get_active_population()
-        return s1.union(s2,s3)
+        if hasattr(self, 'critic_2'):
+            s3 = self.critic_2.get_active_population()
+        return s1.union(s2, s3)
+
+    def get_cells(self):
+        s1 = self.actor.get_cells()
+        s2 = self.critic_1.get_cells()
+        if hasattr(self, 'critic_2'):
+            s3 = self.critic_2.get_cells()
+        return s1.union(s2, s3)
 
     #returns boolean does this individual contain this cell
     def contains_cell(self, cell_id):

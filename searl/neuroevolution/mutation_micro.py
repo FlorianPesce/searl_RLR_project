@@ -1,6 +1,12 @@
+import copy
+from typing import List
+
 import fastrand
 import numpy as np
-import copy
+
+from components.cell import EvolvableMLPCell
+from components.individual_td3_micro import IndividualMicro
+
 
 class MicroMutations():
     def __init__(self, config, replay_sample_queue):
@@ -8,11 +14,12 @@ class MicroMutations():
         self.rng = np.random.RandomState(self.cfg.seed.mutation)
         self.replay_sample_queue = replay_sample_queue
 
-    def no_mutation(self, individual_micro):
+    def no_mutation(self, individual_micro: IndividualMicro):
         individual_micro.train_log["mutation"] = "no_mutation"
         return individual_micro
 
-    def mutation(self, population):
+    def mutation(self, population: List[IndividualMicro])\
+            -> List[IndividualMicro]:
 
         mutation_options = []
         mutation_proba = []
@@ -93,28 +100,29 @@ class MicroMutations():
         individual.rl_config = rl_config
         return individual
     """
-
-    def activation_mutation(self, cell):
+    # TODO
+    def activation_mutation(self, individual_micro: IndividualMicro) -> IndividualMicro:
         #TODO copy all cells then mutate
         #returns clone of individual
         #individual = individual.clone()
 
-        cell = self._permutate_activation(cell)
-        return cell
+        
+        # individual_micro = self._permutate_activation(individual_micro)
+        return individual_micro
 
-
-    def _permutate_activation(self, network):
+    # TODO
+    def _permutate_activation(self, cell: EvolvableMLPCell) -> EvolvableMLPCell:
         possible_activations = ['relu', 'elu', 'tanh']
-        current_activation = network.activation
+        current_activation = cell.activation
         possible_activations.remove(current_activation)
 
         new_activation = self.rng.choice(possible_activations, size=1)[0]
         #new_network = network.clone()
         
-        #net_dict = copy.deepcopy(network.init_dict)
+        net_dict = cell.init_dict
         net_dict['activation'] = new_activation
         #new cell network created here
-        new_network = type(network)(**net_dict)
+        new_cell = type(cell)(**net_dict)
         new_network.load_state_dict(network.state_dict())
         network = new_network
 
