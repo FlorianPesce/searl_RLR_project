@@ -1,4 +1,9 @@
+import copy
+
 import numpy as np
+from searl.neuroevolution.components.cell import EvolvableMLPCell
+from searl.neuroevolution.components.individual_td3_macro import \
+    IndividualMacro
 
 
 class TournamentSelection():
@@ -80,7 +85,7 @@ class TournamentSelection():
 
         #elif select_method == 'reverse_tournament':
         else:
-            raise Exception: "method not implemented"
+            raise Exception("method not implemented")
 
 
 

@@ -165,6 +165,7 @@ class EvolvableMacroNetwork(nn.Module):
     # TODO
     #add cell to random layer
     def add_cell(self, cell):
+        pass
 
     def clone(self):
         clone = EvolvableMacroNetwork(**copy.deepcopy(self.init_dict))
