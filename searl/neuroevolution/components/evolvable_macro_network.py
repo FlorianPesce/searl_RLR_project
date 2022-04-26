@@ -5,9 +5,11 @@ from typing import Dict, List, Optional, Set
 import numpy as np
 import torch
 import torch.nn as nn
+import random
 
-from cell import EvolvableMLPCell
-from macro_layer import MacroLayer
+from searl.neuroevolution.components.cell import EvolvableMLPCell
+from searl.neuroevolution.components.macro_layer import MacroLayer
+from searl.neuroevolution.components.individual_td3_micro import IndividualMicro
 
 #mutate individuals, test individuals select best individuals
 
@@ -153,14 +155,25 @@ class EvolvableMacroNetwork(nn.Module):
             
         return x
     """
+    # TODO add possibility of weighted sampling cells, according to their fitness 
+    # currently only random sampling is supported
+    def _sample_cell(self, micro_population: List[IndividualMicro]):
+        return random.sample(micro_population, k=1)
 
-    def add_layer(self, layer: Optional[MacroLayer] = None):
+
+    def add_layer(self, micro_population: List[IndividualMicro] = None,
+                  layer: Optional[MacroLayer] = None):
         if layer:
             # TODO add functionality of copying a layer
             # TODO sample a cell from population of cells and create a layer with it
-            self.layers.append(MacroLayer())
-        else:
             self.layers.append(layer)
+        elif not micro_population:
+            raise Exception("No micro_population was given for adding layers\
+                             to this evolvable_macro_network")
+        else:
+            # TODO
+            sampled_cell = 
+            self.layers.append(MacroLayer())
 
     # TODO
     #add cell to random layer

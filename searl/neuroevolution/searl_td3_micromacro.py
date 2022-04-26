@@ -482,8 +482,13 @@ class SEARLforTD3():
             #   MACRO MUTATION
             if self.cfg.nevo.macro_mutation:
                 # TODO get the entire population including copies from micro mutations in here
-                macro_population = self.log.log_func(
-                    self.macro_mutation.mutation, macro_population)
+                if self.cfg.nevo.micro_mutation:
+                    macro_population = self.log.log_func(
+                        self.macro_mutation.mutation, macro_population,
+                        micro_population)
+                else:
+                    macro_population = self.log.log_func(
+                        self.macro_mutation.mutation, macro_population)
 
             #   TRAINING
             if self.cfg.nevo.training:
@@ -494,7 +499,8 @@ class SEARLforTD3():
 
 
 def start_searl_td3_run(config, expt_dir):
-    with Supporter(experiments_dir=expt_dir, config_dict=config, count_expt=True) as sup:
+    with Supporter(experiments_dir=expt_dir, config_dict=config,
+                   count_expt=True) as sup:
         cfg = sup.get_config()
         log = sup.get_logger()
 

@@ -26,7 +26,6 @@ class TournamentSelection():
     #def least_fit(self, population, percentage):
 
 
-
     def select_cell_population(self, cell_population, individual_population):
         cell_population_max = self.cfg.cell.population_max
         if not self.cfg.cell.population_limit:
@@ -37,9 +36,8 @@ class TournamentSelection():
 
         select_method = self.cfg.cell.select_method
 
-
         if select_method == 'tournament':
-            elite, new_cell_population = self.select_ind(cell_population)
+            _, new_cell_population = self.select_ind(cell_population)
             return new_cell_population
 
         elif select_method == 'least_fit':
@@ -65,11 +63,11 @@ class TournamentSelection():
             for i, cell in enumerate(cell_population):
                 inactive_cell_indices.append(i)
 
-            #select random subset of cells
+            # select random subset of cells
             indices_to_remove = np.random.choice(np.array(inactive_cell_indices),
                             size = max_inactive_to_remove, replace = False).tolist()
 
-            #removes cells from population
+            # removes cells from population
             for index in sorted(indices_to_remove, reverse=True):
                 del cell_population[index]
 
@@ -86,10 +84,6 @@ class TournamentSelection():
         #elif select_method == 'reverse_tournament':
         else:
             raise Exception("method not implemented")
-
-
-
-
 
 
     def select_ind(self, population):
@@ -134,11 +128,9 @@ class TournamentSelection():
     def remove_ind(self, population, n_remove):
         if isinstance(population[0], EvolvableMLPCell):
             last_fitness = [cell.mean_fitness for cell in population]
-            population_size = self.cfg.cell.population_max
             tournament_size = self.cfg.cell.tournament_size
         elif isinstance(population[0], IndividualMacro):
             last_fitness = [indi.fitness[-1] for indi in population]
-            population_size = self.cfg.nevo.population_size
             tournament_size = self.cfg.nevo.tournament_size
         else:
             raise Exception("population class unrecognized")

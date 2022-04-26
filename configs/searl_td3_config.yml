@@ -145,20 +145,20 @@ cell:
   insertion_method:
   epsilon:                .8
   #boolean keep population below this size
-  population_limit:
+  population_limit: True
   #if population limit,
   #remove cells over this maximum
-  population_max:
+  population_max: 20
   #removes all unreferenced cells
   #selection methods for cells
   #OPTIONS: 'least_fit', 'tournament', 'reverse tournament', 'random'
-  select_method:
+  select_method: 'least_fit'
   #out of all the cells that are removed,
   #what percent will be inferior, and what percent will be inactive
   #percentage of inactive cells to remove
-  percent_inactive:
+  percent_inactive: 100
   #percentage of inferior cells to remove
-  percent_inferior:
+  percent_inferior: 0
   #IF THERE ARE MULTIPLE COPIES OF A CELL IN INDIVIDUAL
   #DO YOU LIMIT HOW MANY YOU CHANGE
   limit_cell_changes:     False
