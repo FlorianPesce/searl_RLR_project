@@ -189,12 +189,20 @@ class MacroMutations():
         offspring_critic_1 = individual.critic_1.clone()
         if self.cfg.train.td3_double_q:
             offspring_critic_2 = individual.critic_2.clone()
-
-        offspring_actor.add_layer()
-        offspring_critic_1.add_layer()
-        if self.cfg.train.td3_double_q:
-            offspring_critic_2.add_layer()
-        individual.train_log["mutation"] = "architecture_new_layer"
+        
+        rand_numb = self.rng.uniform(0, 1)
+        if rand_numb < self.cfg.macro_mutation.new_layer_prob:
+            offspring_actor.add_layer(micro_population, insertion_method='random')
+            offspring_critic_1.add_layer(micro_population, insertion_method='random')
+            if self.cfg.train.td3_double_q:
+                offspring_critic_2.add_layer(micro_population, insertion_method='random')
+            individual.train_log["mutation"] = "architecture_new_macrolayer"
+        else:
+            offspring_actor.add_cell(micro_population=micro_population)
+            offspring_critic_1.add_cell(micro_population=micro_population)
+            if self.cfg.train.td3_double_q:
+                offspring_critic_2.add_cell(micro_population=micro_population)
+            individual.train_log["mutation"] = "architecture_new_macrolayer"
 
         individual.actor = offspring_actor
         individual.critic_1 = offspring_critic_1

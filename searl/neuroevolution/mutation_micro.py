@@ -44,7 +44,8 @@ class MicroMutations():
 
         mutation_proba = np.array(mutation_proba) / np.sum(mutation_proba)
 
-        mutation_choice = self.rng.choice(mutation_options, len(population), p=mutation_proba)
+        mutation_choice = self.rng.choice(mutation_options, len(population),\
+                                          p=mutation_proba)
 
         mutated_population = []
         for mutation, individual in zip(mutation_choice, population):
@@ -52,7 +53,8 @@ class MicroMutations():
 
         return mutated_population
 
-    def activation_mutation(self, individual_micro: IndividualMicro) -> IndividualMicro:
+    def activation_mutation(self, individual_micro: IndividualMicro)\
+            -> IndividualMicro:
         # TODO copy all cells then mutate
         # returns clone of individual
         # individual = individual.clone()
@@ -62,14 +64,17 @@ class MicroMutations():
         individual_micro.train_log["mutation"] = "activation"
         return individual_micro
 
-    def _permutate_activation(self, individual_micro: IndividualMicro) -> IndividualMicro:
+    def _permutate_activation(self, individual_micro: IndividualMicro)\
+            -> IndividualMicro:
         first_cell = individual_micro.cell_copies_in_population[0]
         possible_activations = ['relu', 'elu', 'tanh']
         current_activation = first_cell.activation
         possible_activations.remove(current_activation)
         new_activation = self.rng.choice(possible_activations, size=1)[0]
         
-        for cell in individual_micro.cell_copies_in_population:
+
+        for cell in [individual_micro.cell]\
+                + individual_micro.cell_copies_in_population:
             net_dict = cell.init_dict
             net_dict['activation'] = new_activation
             new_cell = type(cell)(**net_dict)
@@ -78,16 +83,20 @@ class MicroMutations():
 
         return individual_micro
 
-    def architecture_mutate(self, individual_micro: IndividualMicro) -> IndividualMicro:
+    def architecture_mutate(self, individual_micro: IndividualMicro)\
+            -> IndividualMicro:
         offspring_individual_micro = individual_micro.clone()
         rand_numb = self.rng.uniform(0, 1)
         if rand_numb < self.cfg.mutation.new_layer_prob:
-            for cell in offspring_individual_micro.cell_copies_in_production:
+            for cell in [offspring_individual_micro.cell]\
+                    + offspring_individual_micro.cell_copies_in_production:
                 cell.add_layer()
             individual_micro.train_log["mutation"] = "architecture_new_layer"
         else:
-            node_dict = offspring_individual_micro.cell_copies_in_production[0].add_node()
-            for cell in offspring_individual_micro.cell_copies_in_production[1:]:
+            node_dict = offspring_individual_micro\
+                                    .cell_copies_in_production[0].add_node()
+            for cell in [offspring_individual_micro.cell]\
+                    + offspring_individual_micro.cell_copies_in_production[1:]:
                 cell.add_node(**node_dict)
             individual_micro.train_log["mutation"] = "architecture_new_node"
 

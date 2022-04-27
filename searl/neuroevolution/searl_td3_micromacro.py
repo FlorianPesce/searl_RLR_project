@@ -1,6 +1,6 @@
 import copy
 import time
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 
 import gym
 import numpy as np
@@ -113,7 +113,9 @@ class SEARLforTD3():
         return individuals_with_cell
 
     def copy_ind_micro_cell_class_without_cells(self,
-                                                cell_population: List[IndividualMicro]) -> List[IndividualMicro]:
+                                                cell_population:\
+                                                List[IndividualMicro])\
+                                                -> List[IndividualMicro]:
         new_cells = []
         for cell in cell_population:
             new_cells.append(cell.clone_without_cell_copies())
@@ -145,7 +147,9 @@ class SEARLforTD3():
 
         return in_cell_ids
 
-    def update_cell_mean_fitness(self, cell_population):
+    # TODO Is this right? Should it be EvolvableMLPCell or IndividualMicro?
+    def update_cell_mean_fitness(self, cell_population: 
+            List[EvolvableMLPCell]) -> None:
         assert(len(cell_population > 0))
         assert(isinstance(cell_population[0], EvolvableMLPCell))
 
@@ -153,7 +157,7 @@ class SEARLforTD3():
             if cell.active_population:
                 cell.mean_fitness = sum(cell.fitness) / len(cell.fitness)
 
-    def initial_population_micro(self):
+    def initial_population_micro(self) -> List[IndividualMicro]:
         self.log.log("initialize micro population")
         population = []
         for idx in range(self.cfg.nevo.cell_pop_size):
@@ -161,16 +165,19 @@ class SEARLforTD3():
                 cell_config = copy.deepcopy(self.cfg.cell.get_dict)
                 cell_config["activation"] = np.random.choice(
                     ['relu', 'tanh', 'elu'], 1)[0]
-                self.log(f"init {idx} actor_config: ", cell_config)
+                self.log(f"init {idx} cell_config: ", cell_config)
             else:
                 cell_config = copy.deepcopy(self.cfg.cell.get_dict)
 
             # TODO: figure out what to initialize cell with
-            cell = EvolvableMLPCell()
-            population.append(cell)
+            cell = EvolvableMLPCell(id=idx, num_inputs=self.cfg.state_dim,
+                                    num_outputs=self.cfg.action_dim,
+                                    **cell_config)
+            individual_micro = IndividualMicro(id=idx, cell=cell)
+            population.append(individual_micro)
         return population
 
-    def initial_population_macro(self):
+    def initial_population_macro(self) -> List[IndividualMacro]:
         self.log.log("initialize macro population")
         population = []
         for idx in range(self.cfg.nevo.population_size):
@@ -476,8 +483,10 @@ class SEARLforTD3():
                     self.micro_mutation.mutation, micro_population)
                 # at this point, cells have been updated but not the affected layers in evolvableMLPNetworks.
                 macro_population = macro_population.clone()
+
                 # construct overall population with non-mutated and mutated macro individuals
-                macro_population = macro_population_copy + macro_population
+                if self.cfg["micro_mutation"]["keep_original_population"]:
+                    macro_population = macro_population_copy + macro_population
 
             #   MACRO MUTATION
             if self.cfg.nevo.macro_mutation:
@@ -489,14 +498,15 @@ class SEARLforTD3():
                 else:
                     macro_population = self.log.log_func(
                         self.macro_mutation.mutation, macro_population)
+                # TODO figure out if we really need to do this
+                # need to clone in order to update linear layers dimensions
+                macro_population = macro_population.clone()
 
             #   TRAINING
             if self.cfg.nevo.training:
-                # TODO same thing, get the entire population incl. copies
                 macro_population = self.log.log_func(
                     self.training.train, population=macro_population,
                     eval_frames=eval_frames, pool=pool)
-
 
 def start_searl_td3_run(config, expt_dir):
     with Supporter(experiments_dir=expt_dir, config_dict=config,

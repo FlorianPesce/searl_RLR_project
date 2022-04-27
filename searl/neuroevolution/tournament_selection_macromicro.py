@@ -27,14 +27,14 @@ class TournamentSelection():
 
 
     def select_cell_population(self, cell_population, individual_population):
-        cell_population_max = self.cfg.cell.population_max
-        if not self.cfg.cell.population_limit:
+        cell_population_max = self.cfg.selection.population_max
+        if not self.selection.population_limit:
             print("Warning, cell population not limited")
             return cell_population
         if len(cell_population) < cell_population_max:
             return cell_population
 
-        select_method = self.cfg.cell.select_method
+        select_method = self.cfg.selection.select_method
 
         if select_method == 'tournament':
             _, new_cell_population = self.select_ind(cell_population)
@@ -53,8 +53,8 @@ class TournamentSelection():
                 ind.update_active_population()
 
 
-            percent_inactive = self.cfg.cell.percent_inactive
-            percent_inferior = self.cfg.cell.percent_inferior
+            percent_inactive = self.cfg.selection.percent_inactive
+            percent_inferior = self.cfg.selection.percent_inferior
             assert(percent_inferior + percent_inactive == 100)
 
             # remove as many inactive as possible
@@ -89,8 +89,9 @@ class TournamentSelection():
     def select_ind(self, population):
         if isinstance(population[0], EvolvableMLPCell):
             last_fitness = [cell.mean_fitness for cell in population]
-            population_size = self.cfg.cell.population_max
-            tournament_size = self.cfg.cell.tournament_size
+            population_size = self.cfg.selection.population_max
+            # TODO is it the right tournament size being picked here?
+            tournament_size = self.cfg.nevo.tournament_size
         elif isinstance(population[0], IndividualMacro):
             last_fitness = [indi.fitness[-1] for indi in population]
             population_size = self.cfg.nevo.population_size
@@ -128,7 +129,7 @@ class TournamentSelection():
     def remove_ind(self, population, n_remove):
         if isinstance(population[0], EvolvableMLPCell):
             last_fitness = [cell.mean_fitness for cell in population]
-            tournament_size = self.cfg.cell.tournament_size
+            tournament_size = self.cfg.nevo.tournament_size
         elif isinstance(population[0], IndividualMacro):
             last_fitness = [indi.fitness[-1] for indi in population]
             tournament_size = self.cfg.nevo.tournament_size
