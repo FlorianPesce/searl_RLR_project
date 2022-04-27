@@ -1,10 +1,13 @@
 import numpy as np
 from __future__ import annotations
 
+from searl.neuroevolution.components.cell import EvolvableMLPCell 
+
 #one instance of this for all unique cells
 class IndividualMicro():
-    def __init__(self, id) -> None:
-
+    def __init__(self, id: int, cell: EvolvableMLPCell) -> None:
+        # current state of the cell
+        self.cell = cell
         # set of identical cell architectures (evolvableMlpCell)
         # set of EvolvableMLPCells
         # one for each copy of a cell
@@ -14,10 +17,10 @@ class IndividualMicro():
         self.improvement = 0
         self.id = id
 
-    def add_cell(self, cell) -> None:
+    def add_cell(self, cell: EvolvableMLPCell) -> None:
         self.cell_copies_in_population.append(cell)
 
-    def remove_cell(self, cell) -> None:
+    def remove_cell(self, cell: EvolvableMLPCell) -> None:
         self.cell_copies_in_population.remove(cell)
 
     def update_mean_fitness(self) -> float:

@@ -5,9 +5,11 @@ from typing import Dict, List, Optional, Set
 import numpy as np
 import torch
 import torch.nn as nn
+import random
 
-from cell import EvolvableMLPCell
-from macro_layer import MacroLayer
+from searl.neuroevolution.components.cell import EvolvableMLPCell
+from searl.neuroevolution.components.macro_layer import MacroLayer
+from searl.neuroevolution.components.individual_td3_micro import IndividualMicro
 
 #mutate individuals, test individuals select best individuals
 
@@ -42,8 +44,9 @@ from macro_layer import MacroLayer
 #how will we store layer transitions
 #how will we update layer transitions
 class EvolvableMacroNetwork(nn.Module):
-    def __init__(self, layers: List[MacroLayer], num_inputs: int, num_outputs: int,
-                 activation='relu', output_activation=None) -> None:
+    def __init__(self, layers: List[MacroLayer], num_inputs: int,\
+                 num_outputs: int, activation='relu', output_activation=None)\
+                 -> None:
         super(EvolvableMacroNetwork, self).__init__()
 
         self.layers = layers
@@ -84,13 +87,16 @@ class EvolvableMacroNetwork(nn.Module):
 
     @property
     def init_dict(self) -> Dict:
-        init_dict = {"num_inputs": self.num_inputs, "num_outputs": self.num_outputs, 
-                     "activation": self.activation, "output_activation": self.output_activation}
+        init_dict = {"num_inputs": self.num_inputs,\
+                     "num_outputs": self.num_outputs, 
+                     "activation": self.activation,\
+                     "output_activation": self.output_activation}
         return init_dict
 
     @property
     def short_dict(self) -> Dict:
-        short_dict = {"activation": self.activation, "output_activation": self.output_activation}
+        short_dict = {"activation": self.activation,\
+                      "output_activation": self.output_activation}
         return short_dict
 
 
@@ -102,7 +108,8 @@ class EvolvableMacroNetwork(nn.Module):
 
         #create input linear layer, activation
         layer0_indim = self.layers[0].get_input_dims()
-        net_dict[f'linear_layer_input'] = nn.Linear(self.num_inputs, sum(layer0_indim))
+        net_dict[f'linear_layer_input'] = nn.Linear(self.num_inputs,\
+                                                    sum(layer0_indim))
         net_dict[f'activation_input'] = self.activation
 
         #create layer, linear connections 
@@ -111,7 +118,8 @@ class EvolvableMacroNetwork(nn.Module):
             net_dict[f'layer_{i}'] = self.layers[i]
             output_dims = self.layers[i].get_output_dims()
             input_dims = self.layers[i+1].get_input_dims()
-            net_dict[f'linear_layer_{i}'] = nn.Linear(sum(output_dims), sum(input_dims))
+            net_dict[f'linear_layer_{i}'] = nn.Linear(sum(output_dims),\
+                                                      sum(input_dims))
             net_dict[f'activation{i}'] = self.activation
 
         lastlayer_index = len(self.layers) - 1
@@ -119,7 +127,8 @@ class EvolvableMacroNetwork(nn.Module):
 
         #create last layer, and linear for output
         net_dict[f'layer_{lastlayer_index}'] = self.layers[lastlayer_index]
-        net_dict[f'linear_layer_output'] = nn.Linear(sum(lastlayer_outdim), self.num_outputs)
+        net_dict[f'linear_layer_output'] = nn.Linear(sum(lastlayer_outdim),\
+                                                     self.num_outputs)
         net_dict[f'activation_output'] = self.output_activation
 
         #return net_dict
@@ -130,7 +139,8 @@ class EvolvableMacroNetwork(nn.Module):
 
     #divides tensor into a list of tensors with dimensions
     #specified in dims_list
-    def split_tensor(self, x: torch.Tensor, dims_list: List[int]) -> List[torch.Tensor]:
+    def split_tensor(self, x: torch.Tensor, dims_list: List[int])\
+            -> List[torch.Tensor]:
         return list(torch.split(x, split_size_or_sections=dims_list, dim = -1))
 
     """
@@ -153,19 +163,54 @@ class EvolvableMacroNetwork(nn.Module):
             
         return x
     """
+    # TODO add possibility of weighted sampling cells, according to their fitness 
+    # currently only random sampling is supported
+    def _sample_cell(self, micro_population: List[IndividualMicro])\
+            -> EvolvableMLPCell:
+        sampled_individual_micro = random.sample(micro_population, k=1)
+        return sampled_individual_micro.cell
 
-    def add_layer(self, layer: Optional[MacroLayer] = None):
+    def _sample_layer(self) -> int:
+        return random.randint(0, len(self.layers) - 1)
+
+    def add_layer(self, micro_population: List[IndividualMicro] = None,
+                  layer: Optional[MacroLayer] = None,
+                  insertion_method: str = None) -> None:
         if layer:
             # TODO add functionality of copying a layer
             # TODO sample a cell from population of cells and create a layer with it
-            self.layers.append(MacroLayer())
-        else:
             self.layers.append(layer)
+        elif not micro_population:
+            raise Exception("No micro_population was given for adding layers\
+                             to this evolvable_macro_network")
+        elif not insertion_method:
+            raise Exception("No insertion method\
+                             was specified for adding layers")
+        elif insertion_method == 'random':
+            sampled_cell = self._sample_cell(micro_population)
+            self.layers.append(MacroLayer([sampled_cell]))
+        else:
+            raise Exception(f'Only random sampling of cells has been\
+                              implemented for adding layers, but\
+                              {insertion_method} was requested')
 
-    # TODO
-    #add cell to random layer
-    def add_cell(self, cell):
-
+    def add_cell(self, cell: Optional[EvolvableMLPCell] = None,
+                 layer_id: Optional[int] = None,
+                 micro_population: List[IndividualMicro] = None):
+        if cell and layer_id:
+            self.layers[layer_id].add_cell(cell)
+        elif not cell and layer_id and micro_population:
+            self.layers[layer_id].add_cell(self._sample_cell(micro_population))
+        elif cell and not layer_id:
+            sampled_layer_id = self._sample_layer()
+            self.layers[sampled_layer_id].add_cell(cell)
+        elif not cell and not layer_id and micro_population:
+            sampled_layer_id = self._sample_layer()
+            self.layers[sampled_layer_id].add_cell(\
+                self._sample_cell(micro_population))
+        else:
+            raise Exception("A micro population needs to be given to add_cell")
+        
     def clone(self):
         clone = EvolvableMacroNetwork(**copy.deepcopy(self.init_dict))
         clone.load_state_dict(self.state_dict())
@@ -198,11 +243,12 @@ class EvolvableMacroNetwork(nn.Module):
                         old_size = old_net_dict[key].data.size()
                         new_size = param.data.size()
                         if len(param.data.size()) == 1:
-                            param.data[:min(old_size[0], new_size[0])] = old_net_dict[key].data[
-                                                                         :min(old_size[0], new_size[0])]
+                            param.data[:min(old_size[0], new_size[0])] =\
+                            old_net_dict[key].data[:min(old_size[0],\
+                                                        new_size[0])]
                         else:
                             param.data[:min(old_size[0], new_size[0]),
-                                                    :min(old_size[1], new_size[1])] = old_net_dict[
+                                :min(old_size[1], new_size[1])] = old_net_dict[
                                                                      key].data[
                                                                  :min(old_size[
                                                                           0],
@@ -232,6 +278,7 @@ class EvolvableMacroNetwork(nn.Module):
                             param.data[:min_0] = old_net_dict[key].data[:min_0]
                         else:
                             min_1 = min(old_size[1], new_size[1])
-                            param.data[:min_0, :min_1] = old_net_dict[key].data[:min_0, :min_1]
+                            param.data[:min_0, :min_1] =\
+                                old_net_dict[key].data[:min_0, :min_1]
         return new_net
 

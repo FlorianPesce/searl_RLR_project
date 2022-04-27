@@ -1,6 +1,6 @@
 import copy
 import time
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 
 import gym
 import numpy as np
@@ -34,31 +34,36 @@ class SEARLforTD3():
 
         self.log.print_config(self.cfg)
         self.log.csv.fieldnames(
-            ["epoch", "time_string", "eval_eps", "pre_fitness", "pre_rank", "post_fitness", "post_rank", "index",
-             "parent_index", "mutation", "train_iterations",
-             ] + list(self.cfg.rl.get_dict.keys()))
+            ["epoch", "time_string", "eval_eps", "pre_fitness", "pre_rank",
+             "post_fitness", "post_rank", "index", "parent_index", "mutation",
+             "train_iterations", ] + list(self.cfg.rl.get_dict.keys()))
 
         self.log.log("initialize replay memory")
         if self.cfg.nevo.ind_memory:
             push_queue = None
             sample_queue = None
         else:
-            self.replay_memory = MPReplayMemory(seed=self.cfg.seed.replay_memory,
-                                                capacity=self.cfg.train.replay_memory_size,
-                                                batch_size=self.cfg.rl.batch_size,
-                                                reuse_batch=self.cfg.nevo.reuse_batch)
+            self.replay_memory = \
+                MPReplayMemory(seed=self.cfg.seed.replay_memory,
+                               capacity=self.cfg.train.replay_memory_size,
+                               batch_size=self.cfg.rl.batch_size,
+                               reuse_batch=self.cfg.nevo.reuse_batch)
             push_queue = self.replay_memory.get_push_queue()
             sample_queue = self.replay_memory.get_sample_queue()
 
-        self.eval = MPEvaluation(config=self.cfg, logger=self.log, push_queue=push_queue)
+        self.eval = MPEvaluation(config=self.cfg, logger=self.log,
+                                 push_queue=push_queue)
 
         self.tournament = TournamentSelection(config=self.cfg)
 
-        self.macro_mutation = MacroMutations(config=self.cfg, replay_sample_queue=sample_queue)
+        self.macro_mutation = MacroMutations(config=self.cfg,
+                                             replay_sample_queue=sample_queue)
 
-        self.micro_mutation = MicroMutations(config=self.cfg, replay_sample_queue=sample_queue)
+        self.micro_mutation = MicroMutations(config=self.cfg,
+                                             replay_sample_queue=sample_queue)
 
-        self.training = TD3Training(config=self.cfg, replay_sample_queue=sample_queue)
+        self.training = TD3Training(config=self.cfg,
+                                    replay_sample_queue=sample_queue)
 
     def update_cell_fitnesses(self, population: List[IndividualMacro]) -> None:
         assert(len(population) > 0)
@@ -69,7 +74,7 @@ class SEARLforTD3():
 
     # TODO: determine whether or not fitness is copied
     def copy_individuals_with_cell(self, individuals_with_cell:
-            List[IndividualMacro])\
+                                   Dict[int, List[IndividualMacro]])\
             -> Dict[int, List[IndividualMacro]]:
         assert(len(individuals_with_cell) > 0)
 
@@ -91,9 +96,10 @@ class SEARLforTD3():
             cell_active_population.union(ind.get_active_population())
         return cell_active_population
 
-    def get_individuals_with_cell(self,
-            macro_population: List[IndividualMacro], cell_ids: List[int])\
-            -> Dict[int, List[IndividualMacro]]:
+    def get_individuals_with_cell(self, macro_population:
+                                  List[IndividualMacro],
+                                  cell_ids: List[int]) -> Dict[int,
+                                                               List[IndividualMacro]]:
         assert(len(macro_population) > 0)
 
         individuals_with_cell = {}
@@ -107,30 +113,32 @@ class SEARLforTD3():
         return individuals_with_cell
 
     def copy_ind_micro_cell_class_without_cells(self,
-            cell_population: List[IndividualMicro]) -> List[IndividualMicro]:
+                                                cell_population:\
+                                                List[IndividualMicro])\
+                                                -> List[IndividualMicro]:
         new_cells = []
         for cell in cell_population:
             new_cells.append(cell.clone_without_cell_copies())
         return new_cells
 
-    def merge_new_cells_copied_individuals(self,
-            new_cells: List[IndividualMicro],
+    def merge_new_cells_copied_individuals(
+            self, new_cells: List[IndividualMicro],
             copied_individuals: Dict[int: List[IndividualMicro]]) -> None:
-        #note cell here is the micro class, not underlying
-        #for all cells
+        # note cell here is the micro class, not underlying
+        # for all cells
         for cell in new_cells:
             cid = cell.id
-            #for individuals in that cell
+            # for individuals in that cell
             for ind in copied_individuals[cid]:
                 # List[EvolvableMLPCell]
                 cells_in_ind = ind.get_cells(cid)
-                #get cells of that type, and add to the new cell
+                # get cells of that type, and add to the new cell
                 for ev_MLPCell in cells_in_ind:
                     cell.cell_copies_in_population.append(ev_MLPCell)
 
     #
     def get_cells_from_cell_ids(self, cell_population: List[IndividualMicro],
-            cell_ids: List[int]) -> List[IndividualMicro]:
+                                cell_ids: List[int]) -> List[IndividualMicro]:
         cell_ids = set(cell_ids)
         in_cell_ids = []
         for cell in cell_population:
@@ -139,9 +147,9 @@ class SEARLforTD3():
 
         return in_cell_ids
 
-
-
-    def update_cell_mean_fitness(self, cell_population):
+    # TODO Is this right? Should it be EvolvableMLPCell or IndividualMicro?
+    def update_cell_mean_fitness(self, cell_population: 
+            List[EvolvableMLPCell]) -> None:
         assert(len(cell_population > 0))
         assert(isinstance(cell_population[0], EvolvableMLPCell))
 
@@ -149,32 +157,35 @@ class SEARLforTD3():
             if cell.active_population:
                 cell.mean_fitness = sum(cell.fitness) / len(cell.fitness)
 
-
-
-    def initial_population_micro(self):
+    def initial_population_micro(self) -> List[IndividualMicro]:
         self.log.log("initialize micro population")
         population = []
         for idx in range(self.cfg.nevo.cell_pop_size):
             if self.cfg.nevo.init_random_micro:
                 cell_config = copy.deepcopy(self.cfg.cell.get_dict)
-                cell_config["activation"] = np.random.choice(['relu', 'tanh', 'elu'], 1)[0]
-                self.log(f"init {idx} actor_config: ", cell_config)
+                cell_config["activation"] = np.random.choice(
+                    ['relu', 'tanh', 'elu'], 1)[0]
+                self.log(f"init {idx} cell_config: ", cell_config)
             else:
                 cell_config = copy.deepcopy(self.cfg.cell.get_dict)
-            
+
             # TODO: figure out what to initialize cell with
-            cell = EvolvableMLPCell()
-            population.append(cell)
+            cell = EvolvableMLPCell(id=idx, num_inputs=self.cfg.state_dim,
+                                    num_outputs=self.cfg.action_dim,
+                                    **cell_config)
+            individual_micro = IndividualMicro(id=idx, cell=cell)
+            population.append(individual_micro)
         return population
 
-    def initial_population_macro(self):
+    def initial_population_macro(self) -> List[IndividualMacro]:
         self.log.log("initialize macro population")
         population = []
         for idx in range(self.cfg.nevo.population_size):
 
             if self.cfg.nevo.ind_memory:
-                replay_memory = ReplayMemory(capacity=self.cfg.train.replay_memory_size,
-                                             batch_size=self.cfg.rl.batch_size)
+                replay_memory = ReplayMemory(
+                    capacity=self.cfg.train.replay_memory_size,
+                    batch_size=self.cfg.rl.batch_size)
             else:
                 replay_memory = False
 
@@ -187,11 +198,15 @@ class SEARLforTD3():
                 critic_config = copy.deepcopy(self.cfg.critic.get_dict)
                 rl_config = copy.deepcopy(self.cfg.rl)
 
-                actor_config["activation"] = np.random.choice(['relu', 'tanh', 'elu'], 1)[0]
-                critic_config["activation"] = np.random.choice(['relu', 'tanh', 'elu'], 1)[0]
+                actor_config["activation"] = np.random.choice(
+                    ['relu', 'tanh', 'elu'], 1)[0]
+                critic_config["activation"] = np.random.choice(
+                    ['relu', 'tanh', 'elu'], 1)[0]
 
-                lr_actor = np.exp(np.random.uniform(np.log(min_lr), np.log(max_lr), 1))[0]
-                lr_critic = np.exp(np.random.uniform(np.log(min_lr), np.log(max_lr), 1))[0]
+                lr_actor = np.exp(np.random.uniform(
+                    np.log(min_lr), np.log(max_lr), 1))[0]
+                lr_critic = np.exp(np.random.uniform(
+                    np.log(min_lr), np.log(max_lr), 1))[0]
 
                 rl_config.set_attr("lr_actor", lr_actor)
                 rl_config.set_attr("lr_critic", lr_critic)
@@ -203,14 +218,14 @@ class SEARLforTD3():
                 critic_config = copy.deepcopy(self.cfg.critic.get_dict)
                 rl_config = copy.deepcopy(self.cfg.rl)
 
-            indi = IndividualMacro(state_dim=self.cfg.state_dim, action_dim=self.cfg.action_dim,
-                              actor_config=actor_config,
-                              critic_config=critic_config,
-                              rl_config=rl_config, index=idx, td3_double_q=self.cfg.train.td3_double_q,
-                              replay_memory=replay_memory)
+            indi = IndividualMacro(
+                state_dim=self.cfg.state_dim, action_dim=self.cfg.action_dim,
+                actor_config=actor_config, critic_config=critic_config,
+                rl_config=rl_config, index=idx,
+                td3_double_q=self.cfg.train.td3_double_q,
+                replay_memory=replay_memory)
             population.append(indi)
         return population
-
 
     """
     def evolve_population_macro(self, population, epoch=1, num_frames=0):
@@ -282,49 +297,51 @@ class SEARLforTD3():
         self.replay_memory.close()
 
     # TODO
-    def evolve_hierarchical_SEARL(self, micro_population: List[IndividualMicro],
-        macro_population: List[IndividualMacro], n_cells_mutate: int):
+    def evolve_hierarchical_SEARL(
+            self, micro_population: List[IndividualMicro],
+            macro_population: List[IndividualMacro],
+            n_cells_mutate: int):
 
-        #potential issues:
+        # potential issues:
 
-        #if you mutate cells
-        #you have a copy of individuals with each cell (individuals doubled)
-        #but you may not mutate all of those individuals
+        # if you mutate cells
+        # you have a copy of individuals with each cell (individuals doubled)
+        # but you may not mutate all of those individuals
 
-        #by tracking the ancestry of a cell,
-        #you could formulate a better way to
+        # by tracking the ancestry of a cell,
+        # you could formulate a better way to
 
-        #increased complexity
-            #one solution is to just perform less mutations
-        #parallel programming of evaluating several mutations in parallel
+        # increased complexity
+        # one solution is to just perform less mutations
+        # parallel programming of evaluating several mutations in parallel
 
-        #in order to evaluate cells or individuals,
-        #you evaluate individuals, but you need to track
-        #which cells are connected to which individuals
-        #otherwise, this is essentially the same as
-        #evaluate was previously
-        #EVALUATE SAME BUT CELL TRACKING
-        #and then with the cell tracking you need to return cell fitness
-        #values for each cell for selection
+        # in order to evaluate cells or individuals,
+        # you evaluate individuals, but you need to track
+        # which cells are connected to which individuals
+        # otherwise, this is essentially the same as
+        # evaluate was previously
+        # EVALUATE SAME BUT CELL TRACKING
+        # and then with the cell tracking you need to return cell fitness
+        # values for each cell for selection
 
-        #SELECT should be very similar,
-        #but you need to be able to apply it to
-        #cells also
+        # SELECT should be very similar,
+        # but you need to be able to apply it to
+        # cells also
 
-        #mean fitness is appended to the end of fitness
-        #in evaluate
+        # mean fitness is appended to the end of fitness
+        # in evaluate
 
-        #then population[i].fitness[-1] used for mean fitness of each individual to select
+        # then population[i].fitness[-1] used for mean fitness of each individual to select
 
-        #for fitness values in individuals
-            #for all cells in individual
-                #cell.fitness.append(individual_fitness)
+        # for fitness values in individuals
+        # for all cells in individual
+        # cell.fitness.append(individual_fitness)
 
-        #for all cells, take mean of fitness to be new fitness
+        # for all cells, take mean of fitness to be new fitness
 
-        #maybe append to end of fitness,
-        #then you can run through tournament selection if that
-        #is what we end up using
+        # maybe append to end of fitness,
+        # then you can run through tournament selection if that
+        # is what we end up using
 
         # it might be nice to have a list of active cell population
         # or references to
@@ -333,14 +350,13 @@ class SEARLforTD3():
         # harder to measure cell fitness, and more indirect
         # because cell fitness is so stochastic
 
-        #you can write a function update cell fitness
-        #after evaluation is run
+        # you can write a function update cell fitness
+        # after evaluation is run
 
         # do you actually want to prune the population of cells much?
         # depends on how cells are selected
         # maybe write a pruning function with options to
         # prune in different ways
-
 
         frames_since_mut = 0
         num_frames = num_frames
@@ -350,23 +366,24 @@ class SEARLforTD3():
         ctx = mp.get_context('spawn')
 
         while True:
-            #select subset of micro population??
-            pool = ctx.Pool(processes=self.cfg.nevo.worker, maxtasksperchild=1000)
-            
+            # select subset of micro population??
+            pool = ctx.Pool(processes=self.cfg.nevo.worker,
+                            maxtasksperchild=1000)
+
             for ind in macro_population:
                 ind.train_log['epoch'] = epoch
 
-            #these may still need to be rewritten because functions
-            #may not generalize, but should stay the same
+            # these may still need to be rewritten because functions
+            # may not generalize, but should stay the same
 
             # TODO FIX MULTIPROCESSING!
-            #EVALUATION
+            # EVALUATION
             population_mean_fitness, population_var_fitness, eval_frames = \
                 self.log.log_func(self.eval.evaluate_population, population=macro_population,
                                   exploration_noise=self.cfg.eval.exploration_noise,
                                   total_frames=num_frames, pool=pool)
 
-            #UPDATE CELL FITNESSES
+            # UPDATE CELL FITNESSES
             self.update_cell_fitnesses(macro_population)
             # Update mean cell fitnesses
 
@@ -377,10 +394,13 @@ class SEARLforTD3():
             # increment and log
             num_frames += eval_frames
             frames_since_mut += eval_frames
-            self.log.population_info(population_mean_fitness, population_var_fitness, population, num_frames, epoch)
+            self.log.population_info(
+                population_mean_fitness, population_var_fitness, population,
+                num_frames, epoch)
 
-            #save populations
-            self.ckp.save_object(macro_population, name="individual_population")
+            # save populations
+            self.ckp.save_object(
+                macro_population, name="individual_population")
             self.ckp.save_object(micro_population, name="cell_population")
             self.log.log("save population")
             if not self.cfg.nevo.ind_memory:
@@ -397,7 +417,8 @@ class SEARLforTD3():
 
             # TOURNAMENT SELECTION
             if self.cfg.nevo.selection:
-                elite, population = self.log.log_func(self.tournament.select_ind, population)
+                elite, population = self.log.log_func(
+                    self.tournament.select_ind, population)
                 test_fitness = self.eval.test_individual(elite, epoch)
                 self.log(f"##### ELITE INFO {epoch}", time_step=num_frames)
                 self.log("best_test_fitness", test_fitness, num_frames)
@@ -407,74 +428,89 @@ class SEARLforTD3():
             # MUTATION:...
             #   MICRO MUTATION
             if self.cfg.nevo.micro_mutation:
+
+                # for simplicity, copy entire macro_population.
+                # This can be changed to copying macro_individuals
+                # that have been affected by cell mutation.
+                macro_population_copy = macro_population.clone()
+
                 # set of cell ids (integers)
-                cell_active_population = self.get_cell_active_population(macro_population)
+                cell_active_population = self.get_cell_active_population(
+                    macro_population)
                 n_cells = len(cell_active_population)
-                cell_active_population_arr = np.array(list(cell_active_population))
+                cell_active_population_arr = np.array(
+                    list(cell_active_population))
 
                 # choose cells for mutation with replacement
                 # note we could add a config for with/without replacement
                 # list of cell ids
-                cells_for_mutation = np.random.choice(cell_active_population_arr,
-                                                    size = min(n_cells, n_cells_mutate), replace = True).tolist()
+                cells_for_mutation = np.random.choice(
+                    cell_active_population_arr,
+                    size=min(n_cells, n_cells_mutate),
+                    replace=True).tolist()
 
                 # get individuals with cell
                 # dictionary mapping cell_id to list of individualMacros
-                individuals_with_cell = self.get_individuals_with_cell(macro_population, cells_for_mutation)
+                individuals_with_cell = self.get_individuals_with_cell(
+                    macro_population, cells_for_mutation)
 
                 # copy individuals
                 # dictionary mapping cell_id to list of individualMacros
-                copied_individuals_with_cell = self.copy_individuals_with_cell(individuals_with_cell)
+                copied_individuals_with_cell = self.copy_individuals_with_cell(
+                    individuals_with_cell)
 
                 # get cell classes
                 # List[IndividualMicro]. With replacement.
-                cell_pop_for_mutation = self.get_cells_from_cell_ids(micro_population, cells_for_mutation)
+                cell_pop_for_mutation = self.get_cells_from_cell_ids(
+                    micro_population, cells_for_mutation)
 
                 # copy cell classes
                 # List[IndividualMicro]. With replacement.
-                cell_class_copies_no_reference_cells = self.copy_ind_micro_cell_class_without_cells(cell_pop_for_mutation)
+                cell_class_copies_no_reference_cells = self.copy_ind_micro_cell_class_without_cells(
+                    cell_pop_for_mutation)
 
                 # adds the cells from the copied individuals to the corresponding copied
                 # cell classes
                 # in here you could incorporate some limit for how many cells get mutated in an individual
                 # but then the new cells need to be added back to the original cell class instead of the
                 # copied one. otherwise they won't be referenced.
-                self.merge_new_cells_copied_individuals(cell_class_copies_no_reference_cells,
-                                                        copied_individuals_with_cell)
+                self.merge_new_cells_copied_individuals(
+                    cell_class_copies_no_reference_cells,
+                    copied_individuals_with_cell)
 
-                # TODO: make sure in mutations, cells arent referenced elsewhere
-                # need n
-                # modify
+                # now, micro mutations on the old individualMicros and individualMacros
+                micro_population = self.log.log_func(
+                    self.micro_mutation.mutation, micro_population)
+                # at this point, cells have been updated but not the affected layers in evolvableMLPNetworks.
+                macro_population = macro_population.clone()
 
-                # now we can pass cell classes for mutation
-                # within each cell class, something like
-                # for all evolvableMLPCell, apply mutation
-
-                # TODO Mutate Corresponding cells
-                # watch out for dimension change within 
-                # issue: how to track, change parent cell
-                # we copied all the cells in the individuals
-                # but you mutate the individual_micro class
-                # so you need to copy
-
-                # copy individual_micro classes (without cells)
-                # append corresponding cells from copied individuals (for mutation)
-                # here, if you don't want to mutate any of these cells, append them to the original class
+                # construct overall population with non-mutated and mutated macro individuals
+                if self.cfg["micro_mutation"]["keep_original_population"]:
+                    macro_population = macro_population_copy + macro_population
 
             #   MACRO MUTATION
             if self.cfg.nevo.macro_mutation:
                 # TODO get the entire population including copies from micro mutations in here
-                population = self.log.log_func(self.macro_mutation.mutation, population)
+                if self.cfg.nevo.micro_mutation:
+                    macro_population = self.log.log_func(
+                        self.macro_mutation.mutation, macro_population,
+                        micro_population)
+                else:
+                    macro_population = self.log.log_func(
+                        self.macro_mutation.mutation, macro_population)
+                # TODO figure out if we really need to do this
+                # need to clone in order to update linear layers dimensions
+                macro_population = macro_population.clone()
 
             #   TRAINING
             if self.cfg.nevo.training:
-                # TODO same thing, get the entire population incl. copies
-                population = self.log.log_func(self.training.train, population=population, eval_frames=eval_frames,
-                                               pool=pool)
-
+                macro_population = self.log.log_func(
+                    self.training.train, population=macro_population,
+                    eval_frames=eval_frames, pool=pool)
 
 def start_searl_td3_run(config, expt_dir):
-    with Supporter(experiments_dir=expt_dir, config_dict=config, count_expt=True) as sup:
+    with Supporter(experiments_dir=expt_dir, config_dict=config,
+                   count_expt=True) as sup:
         cfg = sup.get_config()
         log = sup.get_logger()
 

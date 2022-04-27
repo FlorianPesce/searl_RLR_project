@@ -21,7 +21,8 @@ class MacroLayer(nn.Module):
     def get_input_dims(self):
         return [cell.num_inputs for cell in self.cells]
 
-    def split_tensor(self, x: torch.Tensor, dims_list: List[int]) -> List[torch.Tensor]:
+    def split_tensor(self, x: torch.Tensor, dims_list: List[int])\
+            -> List[torch.Tensor]:
         return list(torch.split(x, split_size_or_sections=dims_list, dim = -1))
 
     def forward(self, x: torch.Tensor):
@@ -34,6 +35,9 @@ class MacroLayer(nn.Module):
 
         # new addition to combine the tensor
         return torch.cat(x, dim=-1)
+
+    def add_cell(self, cell: EvolvableMLPCell) -> None:
+        self.cells.append(cell)
 
 
     """

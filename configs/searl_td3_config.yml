@@ -25,6 +25,17 @@ nevo:
   init_random_micro:            False
   cell_pop_size:                20
 
+selection:
+  #removes all unreferenced cells 
+  #selection methods for cells
+  #OPTIONS: 'least_fit', 'tournament', 'reverse tournament', 'random'
+  select_method: 'least_fit'
+  #out of all the cells that are removed,
+  #what percent will be inferior, and what percent will be inactive
+  #percentage of inactive cells to remove
+  percent_inactive: 100
+  #percentage of inferior cells to remove
+  percent_inferior: 0
 
 #mutation:
 #  no_mutation:                  0.2
@@ -46,8 +57,15 @@ micro_mutation:
   #not possible
   #rl_hyperparam:                0.2
   #rl_hp_selection:              ['lr_actor','lr_critic'] # 'train_frames_fraction','batch_size',,'td3_policy_noise','td3_update_freq', 'optimizer']
-  # new_layer_prob:               0.2
+  new_layer_prob:               0.2
   mutation_sd:                  0.1
+  #boolean maintain original population after mutations
+  keep_original_population: True
+  #boolean keep population below this size
+  population_limit: True
+  #if population limit,
+  #remove cells over this maximum
+  population_max: 20
 
 macro_mutation:
   no_mutation:                  0.2
@@ -58,6 +76,12 @@ macro_mutation:
   rl_hp_selection:              ['lr_actor','lr_critic'] # 'train_frames_fraction','batch_size',,'td3_policy_noise','td3_update_freq', 'optimizer']
   # new_layer_prob:               0.2
   mutation_sd:                  0.1
+  # TODO implement epsilon greedy
+  #method to insert cells into population
+  #epsilon greedy (either random or mean fitness)
+  # for now only random is supported
+  insertion_method: 'random'
+  epsilon:                1
 
 
 
@@ -137,34 +161,17 @@ cell:
   output_activation:       'linear'
   layer_norm:              True
   output_vanish:           False
-  #boolean maintain original population after mutations
-  keep_original_population: False
 
-  #method to insert cells into population
-  #epsilon greedy (either random or mean fitness
-  insertion_method:
-  epsilon:                .8
-  #boolean keep population below this size
-  population_limit:
-  #if population limit,
-  #remove cells over this maximum
-  population_max:
-  #removes all unreferenced cells
-  #selection methods for cells
-  #OPTIONS: 'least_fit', 'tournament', 'reverse tournament', 'random'
-  select_method:
-  #out of all the cells that are removed,
-  #what percent will be inferior, and what percent will be inactive
-  #percentage of inactive cells to remove
-  percent_inactive:
-  #percentage of inferior cells to remove
-  percent_inferior:
-  #IF THERE ARE MULTIPLE COPIES OF A CELL IN INDIVIDUAL
-  #DO YOU LIMIT HOW MANY YOU CHANGE
-  limit_cell_changes:     False
-  change_cell_number:     1
-  #remove_inactive:
-  #keep unused cells
-  #keep_unused:
-  #remove cells with poor fitness
-  #remove_inferior:
+
+# unused parameters
+'''
+#IF THERE ARE MULTIPLE COPIES OF A CELL IN INDIVIDUAL
+#DO YOU LIMIT HOW MANY YOU CHANGE
+limit_cell_changes:     False
+change_cell_number:     1
+#remove_inactive:
+#keep unused cells
+#keep_unused:
+#remove cells with poor fitness
+#remove_inferior:
+'''

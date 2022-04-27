@@ -1,5 +1,11 @@
+from typing import List, Optional
+
 import fastrand
 import numpy as np
+
+from components.individual_td3_macro import IndividualMacro
+from components.individual_td3_micro import IndividualMicro
+from searl.neuroevolution.components.evolvable_macro_network import EvolvableMacroNetwork
 
 
 class MacroMutations():
@@ -9,11 +15,13 @@ class MacroMutations():
         self.rng = np.random.RandomState(self.cfg.seed.mutation)
         self.replay_sample_queue = replay_sample_queue
 
-    def no_mutation(self, individual):
+    def no_mutation(self, individual: IndividualMacro):
         individual.train_log["mutation"] = "no_mutation"
         return individual
 
-    def mutation(self, population):
+    def mutation(self, population: List[IndividualMacro],
+            micro_population: List[IndividualMicro] = None)\
+            -> List[IndividualMacro]:
 
         mutation_options = []
         mutation_proba = []
@@ -42,11 +50,14 @@ class MacroMutations():
 
         mutated_population = []
         for mutation, individual in zip(mutation_choice, population):
-            mutated_population.append(mutation(individual))
+            if mutation == self.architecture_mutate:
+                mutated_population.append(mutation(individual, micro_population))
+            else:
+                mutated_population.append(mutation(individual))
 
         return mutated_population
 
-    def rl_hyperparam_mutation(self, individual):
+    def rl_hyperparam_mutation(self, individual: IndividualMacro):
 
         rl_config = individual.rl_config
         rl_params = self.cfg.mutation.rl_hp_selection
@@ -93,7 +104,7 @@ class MacroMutations():
         individual.rl_config = rl_config
         return individual
 
-    def activation_mutation(self, individual):
+    def activation_mutation(self, individual: IndividualMacro):
         individual.actor = self._permutate_activation(individual.actor)
         individual.critic_1 = self._permutate_activation(individual.critic_1)
         if self.cfg.train.td3_double_q:
@@ -101,7 +112,7 @@ class MacroMutations():
         individual.train_log["mutation"] = "activation"
         return individual
 
-    def _permutate_activation(self, network):
+    def _permutate_activation(self, network: EvolvableMacroNetwork):
 
         possible_activations = ['relu', 'elu', 'tanh']
         current_activation = network.activation
@@ -115,7 +126,7 @@ class MacroMutations():
 
         return network
 
-    def parameter_mutation(self, individual):
+    def parameter_mutation(self, individual: IndividualMacro):
 
         offspring = individual.actor
 
@@ -130,7 +141,7 @@ class MacroMutations():
         if weight < -mag: weight = -mag
         return weight
 
-    def classic_parameter_mutation(self, network):
+    def classic_parameter_mutation(self, network: EvolvableMacroNetwork):
         mut_strength = self.cfg.mutation.mutation_sd
         num_mutation_frac = 0.1
         super_mut_strength = 10
@@ -171,18 +182,27 @@ class MacroMutations():
                 W[ind_dim1, ind_dim2] = self.regularize_weight(W[ind_dim1, ind_dim2], 1000000)
         return network
 
-    def architecture_mutate(self, individual):
+    def architecture_mutate(self, individual: IndividualMacro,
+                            micro_population: List[IndividualMicro]):
 
         offspring_actor = individual.actor.clone()
         offspring_critic_1 = individual.critic_1.clone()
         if self.cfg.train.td3_double_q:
             offspring_critic_2 = individual.critic_2.clone()
-
-        offspring_actor.add_layer()
-        offspring_critic_1.add_layer()
-        if self.cfg.train.td3_double_q:
-            offspring_critic_2.add_layer()
-        individual.train_log["mutation"] = "architecture_new_layer"
+        
+        rand_numb = self.rng.uniform(0, 1)
+        if rand_numb < self.cfg.macro_mutation.new_layer_prob:
+            offspring_actor.add_layer(micro_population, insertion_method='random')
+            offspring_critic_1.add_layer(micro_population, insertion_method='random')
+            if self.cfg.train.td3_double_q:
+                offspring_critic_2.add_layer(micro_population, insertion_method='random')
+            individual.train_log["mutation"] = "architecture_new_macrolayer"
+        else:
+            offspring_actor.add_cell(micro_population=micro_population)
+            offspring_critic_1.add_cell(micro_population=micro_population)
+            if self.cfg.train.td3_double_q:
+                offspring_critic_2.add_cell(micro_population=micro_population)
+            individual.train_log["mutation"] = "architecture_new_macrolayer"
 
         individual.actor = offspring_actor
         individual.critic_1 = offspring_critic_1
