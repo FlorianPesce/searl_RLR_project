@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import fastrand
 import numpy as np
@@ -20,7 +20,7 @@ class MacroMutations():
         return individual
 
     def mutation(self, population: List[IndividualMacro],
-            micro_population: List[IndividualMicro] = None)\
+            micro_population: Dict[int, IndividualMicro] = None)\
             -> List[IndividualMacro]:
 
         mutation_options = []
@@ -183,7 +183,7 @@ class MacroMutations():
         return network
 
     def architecture_mutate(self, individual: IndividualMacro,
-                            micro_population: List[IndividualMicro]):
+                            micro_population: Dict[int, IndividualMicro]):
 
         offspring_actor = individual.actor.clone()
         offspring_critic_1 = individual.critic_1.clone()

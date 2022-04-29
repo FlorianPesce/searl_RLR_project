@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from collections import OrderedDict
 from typing import List
@@ -6,9 +8,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+
 class EvolvableMLPCell(nn.Module):
-    def __init__(self,id: int, num_inputs: int, num_outputs: int, hidden_size: List[int], activation='relu',
-                 output_activation=None, layer_norm=False, output_vanish=True, stored_values=None):
+    def __init__(self, id: int, num_inputs: int,\
+                 num_outputs: int, hidden_size: List[int], activation='relu',\
+                 output_activation=None, layer_norm=False, output_vanish=True,\
+                 stored_values=None, intra_id=None):
         super(EvolvableMLPCell, self).__init__()
 
         self.num_inputs = num_inputs
@@ -18,6 +23,7 @@ class EvolvableMLPCell(nn.Module):
         self.layer_norm = layer_norm
         self.output_vanish = output_vanish
         self.id = id
+        self.intra_id = intra_id
 
         self.hidden_size = hidden_size
         self.net = self.create_net()
@@ -28,6 +34,9 @@ class EvolvableMLPCell(nn.Module):
 
         if stored_values is not None:
             self.inject_parameters(pvec=stored_values, without_layer_norm=False)
+
+    def set_intra_id(self, intra_id: int) -> None:
+        self.intra_id = intra_id
 
     def get_activation(self, activation_names):
         activation_functions = {'tanh': nn.Tanh, 'linear': nn.Identity, 'relu': nn.ReLU, 'elu': nn.ELU,
@@ -196,11 +205,13 @@ class EvolvableMLPCell(nn.Module):
         return {"hidden_layer": hidden_layer, "numb_new_nodes": numb_new_nodes}
 
     #this won't work once we add convolutional layers
-    def clone(self):
-        clone = EvolvableMLPCell(**copy.deepcopy(self.init_dict))
+    # TODO add an intra_id
+    def clone(self, intra_id: int = None) -> EvolvableMLPCell:
+        clone = EvolvableMLPCell(intra_id=intra_id,**copy.deepcopy(self.init_dict))
         clone.load_state_dict(self.state_dict())
         return clone
 
+    #transfer params from old to new
     def preserve_parameters(self, old_net, new_net):
 
         old_net_dict = dict(old_net.named_parameters())

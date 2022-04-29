@@ -8,31 +8,39 @@ class IndividualMicro():
     def __init__(self, id: int, cell: EvolvableMLPCell) -> None:
         # current state of the cell
         self.cell = cell
-        # set of identical cell architectures (evolvableMlpCell)
-        # set of EvolvableMLPCells
-        # one for each copy of a cell
-        self.cell_copies_in_population = []
-        self.active_population = False #list of evolvable mlp cells which 
+        # Dict[intra_id: EvolvableMLPCell]
+        self.cell_copies_in_population = dict()
+        self.cell_counter = 1 
+        self.active_population = False # list of evolvable mlp cells which 
         self.mean_fitness = None
         self.improvement = 0
         self.id = id
 
-    def add_cell(self, cell: EvolvableMLPCell) -> None:
-        self.cell_copies_in_population.append(cell)
+    def set_id(self, id: int) -> None:
+        self.id = id
 
-    def remove_cell(self, cell: EvolvableMLPCell) -> None:
-        self.cell_copies_in_population.remove(cell)
+    def set_mean_fitness(self, mean_fitness: float) -> None:
+        self.mean_fitness = mean_fitness
+
+    def add_cell(self, cell: EvolvableMLPCell) -> None:
+        self.cell_copies_in_population[self.cell_counter] = cell
+        cell.set_intra_id(self.cell_counter)
+        self.cell_counter += 1
+
+    def remove_cell_id(self, cell_id: int) -> None:
+        self.cell_copies_in_population[cell_id].set_intra_id(None)
+        del self.cell_copies_in_population[cell_id]
 
     def update_mean_fitness(self) -> float:
         self.mean_fitness = np.mean(
             [ind.fitness for ind in self.cell_copies_in_population])
         return self.mean_fitness
 
-    def clone(self) -> IndividualMicro:
-        clone = type(self)()
-        for cell in self.cell_copies_in_population:
-            cloned_cell = cell.clone()
-            clone.cell_copies_in_population.append(cloned_cell)
+    def clone(self, new_id: int = None) -> IndividualMicro:
+        clone = type(self)(new_id, self.cell.clone())
+        for intra_id in self.cell_copies_in_population:
+            cloned_cell = self.cell_copies_in_population[intra_id].clone()
+            clone.add_cell(cloned_cell)
 
         clone.active_population = self.active_population
         clone.mean_fitness = self.mean_fitness
@@ -40,8 +48,8 @@ class IndividualMicro():
 
         return clone
 
-    def clone_without_cell_copies(self) -> IndividualMicro:
-        clone = type(self)()
+    def clone_without_cell_copies(self, new_id: int = None) -> IndividualMicro:
+        clone = type(self)(new_id, self.cell.clone())
 
         clone.active_population = self.active_population
         clone.mean_fitness = self.mean_fitness
