@@ -15,6 +15,13 @@ class MacroLayer(nn.Module):
         super(MacroLayer, self).__init__()
         self.cells = nn.ModuleList(cells)
 
+    def count_id_in_macrolayer(self, id: int) -> int:
+        count = 0
+        for cell in self.cells:
+            if cell.id == id:
+                count += 1
+        return count
+
     def get_output_dims(self):
         return [cell.num_outputs for cell in self.cells]
 
@@ -39,6 +46,51 @@ class MacroLayer(nn.Module):
     def add_cell(self, cell: EvolvableMLPCell) -> None:
         self.cells.append(cell)
 
+    def clone(self, micro_ind_population_dict):
+        new_cells = []
+        for cell in self.cells:
+            #go into micro ind pop
+            #find cell class
+            micro_ind = micro_ind_population_dict[cell.id]
+            new_cell = cell.clone(None)
+            #find last id
+            micro_ind.add_cell(new_cell)
+            assert(new_cell.id != None)
+            new_cells.append(cell.clone())
+        
+        return MacroLayer(new_cells)
+
+    def clone_with_mutations(self, micro_ind_population_dict: dict,
+            mutated_cells_to_add: List[EvolvableMLPCell], cell_id_to_change: int):
+        
+        new_cells = []
+        for cell in self.cells:
+            #go into micro ind pop
+            #find cell class
+            if cell.id == cell_id_to_change:
+                new_cell = mutated_cells_to_add.pop()
+                
+                #transfer params
+                new_net = new_cell.create_net()
+                #transfer params from old to new
+                new_net = new_cell.preserve_parameters(old_net = cell.net, 
+                        new_net=new_net)
+                new_cell.net = new_net
+                
+                #append new cell
+                new_cells.append(new_cell)
+            else:
+                micro_ind = micro_ind_population_dict[cell.id]
+                new_cell = cell.clone(None)
+                #find last id
+                micro_ind.add_cell(new_cell)
+                assert(new_cell.id != None)
+                new_cells.append(cell.clone())
+        
+        assert(len(mutated_cells_to_add) == 0)
+        return MacroLayer(new_cells)
+        
+
 
     """
     def forward(self, x: List[torch.Tensor]):
@@ -51,13 +103,4 @@ class MacroLayer(nn.Module):
         #new addition to combine the tensor
         return torch.cat(output_list, dim = -1)
     """
-
-        
-
-
-
-
-    
-
-
-        
+       

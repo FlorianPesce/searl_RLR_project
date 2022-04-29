@@ -49,7 +49,7 @@ class EvolvableMacroNetwork(nn.Module):
                  -> None:
         super(EvolvableMacroNetwork, self).__init__()
 
-        self.layers = layers
+        self.layers = nn.ModuleList(layers)
         self.net = self.create_net()
 
         self.num_inputs = num_inputs
@@ -165,15 +165,15 @@ class EvolvableMacroNetwork(nn.Module):
     """
     # TODO add possibility of weighted sampling cells, according to their fitness 
     # currently only random sampling is supported
-    def _sample_cell(self, micro_population: List[IndividualMicro])\
+    def _sample_cell(self, micro_population: Dict[int, IndividualMicro])\
             -> EvolvableMLPCell:
-        sampled_individual_micro = random.sample(micro_population, k=1)
+        sampled_individual_micro = random.sample(list(micro_population.values()), k=1)
         return sampled_individual_micro.cell
 
     def _sample_layer(self) -> int:
         return random.randint(0, len(self.layers) - 1)
 
-    def add_layer(self, micro_population: List[IndividualMicro] = None,
+    def add_layer(self, micro_population: Dict[int, IndividualMicro] = None,
                   layer: Optional[MacroLayer] = None,
                   insertion_method: str = None) -> None:
         if layer:
@@ -196,7 +196,7 @@ class EvolvableMacroNetwork(nn.Module):
 
     def add_cell(self, cell: Optional[EvolvableMLPCell] = None,
                  layer_id: Optional[int] = None,
-                 micro_population: List[IndividualMicro] = None):
+                 micro_population: Dict[int, IndividualMicro] = None):
         if cell and layer_id:
             self.layers[layer_id].add_cell(cell)
         elif not cell and layer_id and micro_population:
@@ -210,10 +210,66 @@ class EvolvableMacroNetwork(nn.Module):
                 self._sample_cell(micro_population))
         else:
             raise Exception("A micro population needs to be given to add_cell")
+    
+    # TODO
+    #this adds cells to the original class 
+    def clone(self, micro_ind_population_dict):
+        #    def __init__(self, layers: List[MacroLayer], num_inputs: int,\
+                 #num_outputs: int, activation='relu', output_activation=None)\
         
-    def clone(self):
-        clone = EvolvableMacroNetwork(**copy.deepcopy(self.init_dict))
+        #new list of layers
+        new_macro_layers = []
+        
+        #copy macro layers
+        for layer in layers:
+            #copy macro layer
+            new_layer = layer.clone(micro_ind_population_dict)
+            new_macro_layers.append(new_layer)
+
+        clone = EvolvableMacroNetwork(layers = new_macro_layers, 
+                **copy.deepcopy(self.init_dict))
+        #does this copy the architecture
         clone.load_state_dict(self.state_dict())
+        return clone
+
+    #preserves cell parameters
+    # TODO: preserve linear connective layers
+    # simple way is just to copy params from all the linear layers that didn't change
+    def clone_and_insert_mutated_cells(self, micro_ind_population_dict: dict,
+            mutated_cells: List[EvolvableMLPCell], cell_id_to_change: int):
+        
+        #new list of layers
+        new_macro_layers = []
+        cell_count = 1
+        
+        #copy macro layers
+        for layer in layers:
+            #copy macro layer
+            
+            id_count_in_layer = layer.count_id_in_macrolayer(cell_id_to_change)
+            
+            #if cell id in macro layer, copy layer with insertion/deletion cell
+            if id_count_in_layer > 0:
+                #get cells to insert
+                to_add = []
+
+                #get cells to add to layer (and remove from )
+                for cell in mutated_cells:
+                    to_add.append(mutated_cells.pop())
+                    
+                
+                new_layer = layer.clone_with_mutated(micro_ind_population_dict, 
+                            to_add, cell_id_to_change)
+
+            else: #copy layer
+                new_layer = layer.clone(micro_ind_population_dict)
+                new_macro_layers.append(new_layer)
+
+        clone = EvolvableMacroNetwork(layers = new_macro_layers, 
+                **copy.deepcopy(self.init_dict))
+        #does this copy the architecture
+        #clone.load_state_dict(self.state_dict())
+        print("WARNING: PARAMETERS OF CONNECTIVE LAYERS NOT TRANSFERRED")
         return clone
 
 

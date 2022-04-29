@@ -74,7 +74,7 @@ macro_mutation:
   activation:                   0.2
   rl_hyperparam:                0.2
   rl_hp_selection:              ['lr_actor','lr_critic'] # 'train_frames_fraction','batch_size',,'td3_policy_noise','td3_update_freq', 'optimizer']
-  # new_layer_prob:               0.2
+  new_layer_prob:               0.2
   mutation_sd:                  0.1
   # TODO implement epsilon greedy
   #method to insert cells into population

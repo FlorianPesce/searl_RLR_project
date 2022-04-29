@@ -1,11 +1,12 @@
 import copy
-from typing import List
+from typing import List, Dict
 
 import fastrand
 import numpy as np
 
 from components.cell import EvolvableMLPCell
 from components.individual_td3_micro import IndividualMicro
+from searl.neuroevolution.searl_td3_micromacro import SEARLforTD3
 
 
 class MicroMutations():
@@ -18,8 +19,8 @@ class MicroMutations():
         individual_micro.train_log["mutation"] = "no_mutation"
         return individual_micro
 
-    def mutation(self, population: List[IndividualMicro])\
-            -> List[IndividualMicro]:
+    def mutation(self, population: Dict[int, IndividualMicro], searl: SEARLforTD3)\
+            -> Dict[int, IndividualMicro]:
 
         mutation_options = []
         mutation_proba = []
@@ -49,7 +50,9 @@ class MicroMutations():
 
         mutated_population = []
         for mutation, individual in zip(mutation_choice, population):
-            mutated_population.append(mutation(individual))
+            mutated_individual = mutation(individual)
+            mutated_individual.set_id(searl.individual_micro_counter)
+            mutated_population[searl.individual_micro_counter] = mutated_individual
 
         return mutated_population
 
@@ -59,11 +62,13 @@ class MicroMutations():
         # returns clone of individual
         # individual = individual.clone()
         # question from Florian: why clone here?
-
+        individual_micro = individual_micro.clone()
         individual_micro = self._permutate_activation(individual_micro)
         individual_micro.train_log["mutation"] = "activation"
         return individual_micro
 
+    #creates copies of evolvable cells, but doesn't create copies
+    #of cell class, maybe update for consistency
     def _permutate_activation(self, individual_micro: IndividualMicro)\
             -> IndividualMicro:
         first_cell = individual_micro.cell_copies_in_population[0]
@@ -72,7 +77,6 @@ class MicroMutations():
         possible_activations.remove(current_activation)
         new_activation = self.rng.choice(possible_activations, size=1)[0]
         
-
         for cell in [individual_micro.cell]\
                 + individual_micro.cell_copies_in_population:
             net_dict = cell.init_dict
@@ -82,9 +86,13 @@ class MicroMutations():
             cell = new_cell
 
         return individual_micro
-
+    
+    #creates a copy of everything before mutation
+    #but I'm pretty sure we can just change this to not create a copy
+    #and create the copy in searl td3
     def architecture_mutate(self, individual_micro: IndividualMicro)\
             -> IndividualMicro:
+        #copies individual and all cells
         offspring_individual_micro = individual_micro.clone()
         rand_numb = self.rng.uniform(0, 1)
         if rand_numb < self.cfg.mutation.new_layer_prob:
