@@ -57,7 +57,7 @@ selection:
 
 micro_mutation:
   no_mutation:                  0.2
-  n_cells_mutate:               5
+  n_cells_mutate:               10
   #do we want to mutate cell parameters individually??
   #parameters:                   0.2
   architecture:                 0.2

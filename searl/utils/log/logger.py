@@ -91,6 +91,9 @@ class Logger(Handler):
         self.log('Population fitness', [ind.fitness[-1] for ind in population], time_step=num_frames)
         self.log('Population improve', [ind.improvement for ind in population], time_step=num_frames)
         self.log('Population var fit', [float(var) for var in population_var_fitness], time_step=num_frames)
+
+        self.log('Cells', [cell for cell in layer.cells for layer in ind.layers for ind in population], time_step=num_frames)
+
         #self.log('Actors hidden size ', [[int(s) for s in ind.actor_config['hidden_size']] for ind in population],
         #         time_step=num_frames)
         self.log('Mutation: ', [ind.train_log["mutation"] for ind in population], time_step=num_frames)

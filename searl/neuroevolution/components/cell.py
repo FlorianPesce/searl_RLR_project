@@ -68,7 +68,8 @@ class EvolvableMLPCell(nn.Module):
 
         net_dict[f"linear_layer_output"] = output_layer
         if self.output_activation is not None:
-            net_dict[f"activation_output"] = self.get_activation(self.output_activation)
+            #changed to activation from output activation
+            net_dict[f"activation_output"] = self.get_activation(self.activation)
 
         return nn.Sequential(net_dict)
 

@@ -140,6 +140,10 @@ class EvolvableMacroNetwork(nn.Module):
         layer0_indim = self.layers[0].get_input_dims()
         net_dict[f'linear_layer_input'] = nn.Linear(self.num_inputs,\
                                                     sum(layer0_indim))
+
+        if self.layer_norm:
+            net_dict["layer_norm_input"] = nn.LayerNorm(sum(layer0_indim))
+
         net_dict[f'activation_input'] = self.get_activation(self.activation)
 
         #create layer, linear connections 
@@ -150,6 +154,10 @@ class EvolvableMacroNetwork(nn.Module):
             input_dims = self.layers[i+1].get_input_dims()
             net_dict[f'linear_layer_{i}'] = nn.Linear(sum(output_dims),\
                                                       sum(input_dims))
+
+            if self.layer_norm:
+                net_dict[f"layer_norm_{i}"] = nn.LayerNorm(sum(input_dims))
+
             net_dict[f'activation{i}'] = self.get_activation(self.activation)
 
         lastlayer_index = len(self.layers) - 1
@@ -157,9 +165,17 @@ class EvolvableMacroNetwork(nn.Module):
 
         #create last layer, and linear for output
         net_dict[f'layer_{lastlayer_index}'] = self.layers[lastlayer_index]
-        net_dict[f'linear_layer_output'] = nn.Linear(sum(lastlayer_outdim),\
+        output_layer = nn.Linear(sum(lastlayer_outdim),\
                                                      self.num_outputs)
-        net_dict[f'activation_output'] = self.get_activation(self.activation)
+
+        if self.output_vanish:
+            output_layer.weight.data.mul_(0.1)
+            output_layer.bias.data.mul_(0.1)
+
+
+        net_dict[f'linear_layer_output'] = output_layer
+
+        net_dict[f'activation_output'] = self.get_activation(self.output_activation)
 
         #return net_dict
         #not sure if this will work with nn.sequential
