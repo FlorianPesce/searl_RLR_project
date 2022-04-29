@@ -1,12 +1,13 @@
 import copy
-
+from typing import List
 from searl.neuroevolution.components.evolvable_macro_network import EvolvableMacroNetwork
-
+from searl.neuroevolution.components.cell import EvolvableMLPCell
+import numpy as np
 
 class IndividualMacro():
 
     def __init__(self, state_dim, action_dim, actor_config, critic_config, rl_config, index, td3_double_q,
-                 critic_2_config=None, replay_memory=None):
+                 critic_2_config=None, replay_memory=None, rand_init = False, micro_population = None):
 
         self.state_dim = state_dim
         self.action_dim = action_dim
@@ -20,10 +21,41 @@ class IndividualMacro():
             critic_2_config = copy.deepcopy(critic_config)
 
         # TODO decide how we want to initialize the network
-        self.actor = EvolvableMacroNetwork(num_inputs=state_dim, num_outputs=action_dim, **actor_config)
-        self.critic_1 = EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1, **critic_config)
-        if td3_double_q:
-            self.critic_2 = EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1, **critic_2_config)
+        if rand_init:
+            assert(micro_population is not None)
+            cell_ids = list(micro_population.keys())
+            #randomly select cell to initialize evolvable macros
+            print(cell_ids)
+            cell_ids_to_insert = np.random.choice(cell_ids, size=3, replace=True).tolist()
+
+            ev_cells = []
+            for cell_id in cell_ids_to_insert:
+                micro_ind = micro_population[cell_id]
+                ev_copy = micro_ind.cell.clone()
+                micro_ind.add_cell(ev_copy)
+                ev_cells.append(ev_copy)
+
+            actor_layers = [ev_cells[0]]
+            critic_1_layers = [ev_cells[1]]
+            critic_2_layers = [ev_cells[2]]
+
+            self.actor = EvolvableMacroNetwork(state_dim, num_outputs=action_dim, **actor_config,
+                                               layers=actor_layers)
+            self.critic_1 = EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1, **critic_config,
+                                                  layers=critic_1_layers)
+            if td3_double_q:
+                self.critic_2 = EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1,
+                                                      **critic_2_config, layers=critic_2_layers)
+
+        else:
+            self.actor = EvolvableMacroNetwork(num_inputs=state_dim, num_outputs=action_dim, **actor_config)
+            self.critic_1 = EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1, **critic_config)
+            if td3_double_q:
+                self.critic_2 = EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1, **critic_2_config)
+
+
+
+
 
         self.fitness = []
         self.improvement = 0
@@ -97,3 +129,56 @@ class IndividualMacro():
             self.replay_memory = copy.deepcopy(self.replay_memory)
 
         return clone
+
+    def clone_and_insert_mutated_cells(self, cell_id_to_change: int,
+            actor_mutated_cells: List[EvolvableMLPCell],
+            critic_1_mutated_cells: List[EvolvableMLPCell],
+            critic_2_mutated_cells: List[EvolvableMLPCell],
+            micro_ind_population_dict: dict, index=None, copy_fitness = False):
+
+        if index is None:
+            index = self.index
+
+        if self.td3_double_q:
+            critic_2_config = copy.deepcopy(self.critic_2.short_dict)
+        else:
+            critic_2_config = None
+
+        clone = type(self)(state_dim=self.state_dim,
+                           action_dim=self.action_dim,
+                           actor_config=copy.deepcopy(self.actor.short_dict),
+                           critic_config=copy.deepcopy(self.critic_1.short_dict),
+                           rl_config=copy.deepcopy(self.rl_config),
+                           index=index,
+                           td3_double_q=self.td3_double_q,
+                           critic_2_config=critic_2_config,
+                           replay_memory=self.replay_memory)
+
+        if copy_fitness:
+            clone.fitness = copy.deepcopy(self.fitness)
+
+        clone.train_log = copy.deepcopy(self.train_log)
+        clone.actor = self.actor.clone_and_insert_mutated_cells(micro_ind_population_dict,
+                                                                actor_mutated_cells, cell_id_to_change)
+        clone.critic_1 = self.critic_1.clone(micro_ind_population_dict,
+                                            critic_1_mutated_cells, cell_id_to_change)
+        if self.td3_double_q:
+            clone.critic_2 = self.critic_2.clone(micro_ind_population_dict,
+                                                critic_2_mutated_cells, cell_id_to_change)
+
+        if self.replay_memory:
+            self.replay_memory = copy.deepcopy(self.replay_memory)
+
+        return clone
+
+
+
+
+
+
+
+
+
+
+
+

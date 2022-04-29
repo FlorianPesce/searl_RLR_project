@@ -3,8 +3,8 @@ from typing import List, Optional, Dict
 import fastrand
 import numpy as np
 
-from components.individual_td3_macro import IndividualMacro
-from components.individual_td3_micro import IndividualMicro
+from searl.neuroevolution.components.individual_td3_macro import IndividualMacro
+from searl.neuroevolution.components.individual_td3_micro import IndividualMicro
 from searl.neuroevolution.components.evolvable_macro_network import EvolvableMacroNetwork
 
 

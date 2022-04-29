@@ -1,5 +1,6 @@
-import numpy as np
 from __future__ import annotations
+import numpy as np
+
 
 from searl.neuroevolution.components.cell import EvolvableMLPCell 
 
@@ -25,6 +26,7 @@ class IndividualMicro():
     def add_cell(self, cell: EvolvableMLPCell) -> None:
         self.cell_copies_in_population[self.cell_counter] = cell
         cell.set_intra_id(self.cell_counter)
+        cell.id = self.id
         self.cell_counter += 1
 
     def remove_cell_id(self, cell_id: int) -> None:
@@ -37,9 +39,9 @@ class IndividualMicro():
         return self.mean_fitness
 
     def clone(self, new_id: int = None) -> IndividualMicro:
-        clone = type(self)(new_id, self.cell.clone())
+        clone = type(self)(new_id, self.cell.clone(new_id))
         for intra_id in self.cell_copies_in_population:
-            cloned_cell = self.cell_copies_in_population[intra_id].clone()
+            cloned_cell = self.cell_copies_in_population[intra_id].clone(new_id)
             clone.add_cell(cloned_cell)
 
         clone.active_population = self.active_population

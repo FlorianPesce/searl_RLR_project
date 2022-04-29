@@ -58,6 +58,14 @@ class EvolvableMacroNetwork(nn.Module):
         self.output_activation = output_activation
         self.contained_active_population = set()
 
+    def get_cell_count(self, cell_id: int):
+        count = 0
+        for layer in self.layers:
+            for cell in layer:
+                if cell.id == cell_id:
+                    count += 1
+        return count
+
     def update_cell_fitnesses(self, mean_fitness) -> None:
         for layer in self.layers:
             for cell in layer.cells:
@@ -244,8 +252,8 @@ class EvolvableMacroNetwork(nn.Module):
         
         #copy macro layers
         for layer in layers:
+
             #copy macro layer
-            
             id_count_in_layer = layer.count_id_in_macrolayer(cell_id_to_change)
             
             #if cell id in macro layer, copy layer with insertion/deletion cell
@@ -256,8 +264,7 @@ class EvolvableMacroNetwork(nn.Module):
                 #get cells to add to layer (and remove from )
                 for cell in mutated_cells:
                     to_add.append(mutated_cells.pop())
-                    
-                
+
                 new_layer = layer.clone_with_mutated(micro_ind_population_dict, 
                             to_add, cell_id_to_change)
 

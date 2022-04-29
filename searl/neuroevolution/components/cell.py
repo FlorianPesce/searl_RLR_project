@@ -206,8 +206,8 @@ class EvolvableMLPCell(nn.Module):
 
     #this won't work once we add convolutional layers
     # TODO add an intra_id
-    def clone(self, intra_id: int = None) -> EvolvableMLPCell:
-        clone = EvolvableMLPCell(intra_id=intra_id,**copy.deepcopy(self.init_dict))
+    def clone(self, intra_id: int = None, id: int = None) -> EvolvableMLPCell:
+        clone = EvolvableMLPCell(id = id, intra_id=intra_id,**copy.deepcopy(self.init_dict))
         clone.load_state_dict(self.state_dict())
         return clone
 

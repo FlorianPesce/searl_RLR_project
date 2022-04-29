@@ -25,6 +25,11 @@ nevo:
   init_random_micro:            False
   cell_pop_size:                20
 
+  #used in code, but likely irrelevant for us
+  #called in initial_poulation_macro
+  init_random:                  False
+
+
 selection:
   #removes all unreferenced cells 
   #selection methods for cells
@@ -164,14 +169,13 @@ cell:
 
 
 # unused parameters
-'''
+
 #IF THERE ARE MULTIPLE COPIES OF A CELL IN INDIVIDUAL
 #DO YOU LIMIT HOW MANY YOU CHANGE
-limit_cell_changes:     False
-change_cell_number:     1
+#limit_cell_changes:     False
+#change_cell_number:     1
 #remove_inactive:
 #keep unused cells
 #keep_unused:
 #remove cells with poor fitness
 #remove_inferior:
-'''

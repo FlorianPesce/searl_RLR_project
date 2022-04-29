@@ -4,9 +4,10 @@ from typing import List, Dict
 import fastrand
 import numpy as np
 
-from components.cell import EvolvableMLPCell
-from components.individual_td3_micro import IndividualMicro
-from searl.neuroevolution.searl_td3_micromacro import SEARLforTD3
+from searl.neuroevolution.components.cell import EvolvableMLPCell
+from searl.neuroevolution.components.individual_td3_micro import IndividualMicro
+#import searl.neuroevolution.searl_td3_micromacro as SEARLforTD3
+import searl.neuroevolution.searl_td3_micromacro
 
 
 class MicroMutations():
@@ -19,14 +20,17 @@ class MicroMutations():
         individual_micro.train_log["mutation"] = "no_mutation"
         return individual_micro
 
-    def mutation(self, population: Dict[int, IndividualMicro], searl: SEARLforTD3)\
+    def mutation(self, population: List[IndividualMicro], searl)\
             -> Dict[int, IndividualMicro]:
 
         mutation_options = []
         mutation_proba = []
-        if self.cfg.micro_mutation.no_mutation:
-            mutation_options.append(self.no_mutation)
-            mutation_proba.append(float(self.cfg.micro_mutation.no_mutation))
+
+        #THIS IS THE SAME AS JUST MUTATING LESS CELLS, BUT IT MAKES THE CODE MORE COMPLICATED
+        #JUST REDUCE THE NUMBER OF CELLS SELECTED FOR MUTATION
+        #if self.cfg.micro_mutation.no_mutation:
+        #    mutation_options.append(self.no_mutation)
+        #    mutation_proba.append(float(self.cfg.micro_mutation.no_mutation))
         if self.cfg.micro_mutation.architecture:
             mutation_options.append(self.architecture_mutate)
             mutation_proba.append(float(self.cfg.micro_mutation.architecture))
@@ -51,8 +55,9 @@ class MicroMutations():
         mutated_population = []
         for mutation, individual in zip(mutation_choice, population):
             mutated_individual = mutation(individual)
-            mutated_individual.set_id(searl.individual_micro_counter)
-            mutated_population[searl.individual_micro_counter] = mutated_individual
+            mutated_individual.set_id(searl.get_and_increment_ind_micro_counter())
+            #mutated_population[searl.individual_micro_counter] = mutated_individual
+            mutated_population.append(mutated_individual)
 
         return mutated_population
 
