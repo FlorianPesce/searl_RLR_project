@@ -91,12 +91,12 @@ class Logger(Handler):
         self.log('Population fitness', [ind.fitness[-1] for ind in population], time_step=num_frames)
         self.log('Population improve', [ind.improvement for ind in population], time_step=num_frames)
         self.log('Population var fit', [float(var) for var in population_var_fitness], time_step=num_frames)
-        self.log('Actors hidden size ', [[int(s) for s in ind.actor_config['hidden_size']] for ind in population],
-                 time_step=num_frames)
+        #self.log('Actors hidden size ', [[int(s) for s in ind.actor_config['hidden_size']] for ind in population],
+        #         time_step=num_frames)
         self.log('Mutation: ', [ind.train_log["mutation"] for ind in population], time_step=num_frames)
         self.log('mean_fitness', np.mean(population_mean_fitness), time_step=num_frames)
         self.log('best_fitness', population[best_idx].fitness[-1], time_step=num_frames)
         self.log('best_improve', population[best_idx].improvement, time_step=num_frames)
         self.log('best rl config', population[best_idx].rl_config.__str__(), time_step=num_frames)
-        self.log('Best Actors hidden size', [int(s) for s in population[best_idx].actor_config['hidden_size']],
-                 time_step=num_frames)
+        #self.log('Best Actors hidden size', [int(s) for s in population[best_idx].actor_config['hidden_size']],
+        #         time_step=num_frames)

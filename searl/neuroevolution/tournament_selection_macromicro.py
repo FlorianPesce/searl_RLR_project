@@ -103,7 +103,7 @@ class TournamentSelection():
                                  dead_individual_macro.critic_1]
             for network in list_networks:
                 for layer in network.layers:
-                    for cell in layer:
+                    for cell in layer.cells:
                         micro_population[cell.id].remove_cell_id(cell.intra_id)
 
 
@@ -126,7 +126,7 @@ class TournamentSelection():
         if self.cfg.nevo.elitism:
             #appends best individual in population
             #no matter what
-            new_population.append(elite.clone())
+            new_population.append(elite.clone(micro_population))
             selection_size = population_size - 1
         else:
             selection_size = population_size
@@ -136,7 +136,7 @@ class TournamentSelection():
             winner = self._tournament(rank, tournament_size)
             losers[winner] = False
             actor_parent = macro_population[winner]
-            new_individual = actor_parent.clone(max_id)
+            new_individual = actor_parent.clone(micro_population)
             new_individual.train_log["parent_index"] = actor_parent.index
             new_population.append(new_individual)
 

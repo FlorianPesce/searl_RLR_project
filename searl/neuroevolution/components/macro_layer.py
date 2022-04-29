@@ -56,9 +56,24 @@ class MacroLayer(nn.Module):
             #find last id
             micro_ind.add_cell(new_cell)
             assert(new_cell.id != None)
-            new_cells.append(cell.clone())
+            new_cells.append(new_cell)
         
         return MacroLayer(new_cells)
+
+    def clone_without_adding_cells(self):
+        new_cells = []
+        for cell in self.cells:
+            # go into micro ind pop
+            # find cell class
+            #micro_ind = micro_ind_population_dict[cell.id]
+            new_cell = cell.clone(None)
+            # find last id
+            #micro_ind.add_cell(new_cell)
+            #assert (new_cell.id != None)
+            new_cells.append(new_cell)
+
+        return MacroLayer(new_cells)
+
 
     def clone_with_mutations(self, micro_ind_population_dict: dict,
             mutated_cells_to_add: List[EvolvableMLPCell], cell_id_to_change: int):
@@ -85,7 +100,7 @@ class MacroLayer(nn.Module):
                 #find last id
                 micro_ind.add_cell(new_cell)
                 assert(new_cell.id != None)
-                new_cells.append(cell.clone())
+                new_cells.append(new_cell)
         
         assert(len(mutated_cells_to_add) == 0)
         return MacroLayer(new_cells)

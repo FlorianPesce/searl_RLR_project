@@ -11,7 +11,7 @@ expt:
 ###      NEVO Configuration         ###
 #######################################
 nevo:
-  population_size:              2 #10
+  population_size:              10 #10
   tournament_size:              1 #3
   selection:                    True
   mutation:                     True
@@ -24,6 +24,8 @@ nevo:
   init_random_macro:            False
   init_random_micro:            False
   cell_pop_size:                20
+  macro_mutation:               False
+  micro_mutation:               True
 
   #used in code, but likely irrelevant for us
   #called in initial_poulation_macro
@@ -55,6 +57,7 @@ selection:
 
 micro_mutation:
   no_mutation:                  0.2
+  n_cells_mutate:               5
   #do we want to mutate cell parameters individually??
   #parameters:                   0.2
   architecture:                 0.2
@@ -126,7 +129,7 @@ seed:
 ###    Environment Configuration    ###
 #######################################
 env:
-  name:                        'MountainCarContinuous-v0' #'Walker2d-v2' #'Walker2d-v2' #'HalfCheetah-v2' # HalfCheetah-v2'
+  name:                        'Pendulum-v0'#'MountainCarContinuous-v0' #'Walker2d-v2' #'Walker2d-v2' #'HalfCheetah-v2' # HalfCheetah-v2'
 
 
 eval:
@@ -141,7 +144,7 @@ eval:
 ###  Actor Starting Configuration   ###
 #######################################
 actor:
-  hidden_size:             [128]
+  #hidden_size:             [128]
   activation:              'relu' #'relu' , 'sigmoid' 'softplus',
   output_activation:       'tanh'
   layer_norm:              True
@@ -151,7 +154,7 @@ actor:
 ###  Critic Starting Configuration  ###
 #######################################
 critic:
-  hidden_size:             [128]
+  #hidden_size:             [128]
   activation:              'relu' #'relu' , 'sigmoid' 'softplus',
   output_activation:       'linear'
   layer_norm:              True

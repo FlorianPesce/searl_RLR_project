@@ -45,18 +45,39 @@ from searl.neuroevolution.components.individual_td3_micro import IndividualMicro
 #how will we update layer transitions
 class EvolvableMacroNetwork(nn.Module):
     def __init__(self, layers: List[MacroLayer], num_inputs: int,\
-                 num_outputs: int, activation='relu', output_activation=None)\
+                 num_outputs: int, activation='relu',layer_norm = True,
+                 output_vanish = False, output_activation=None)\
                  -> None:
         super(EvolvableMacroNetwork, self).__init__()
 
         self.layers = nn.ModuleList(layers)
-        self.net = self.create_net()
+
 
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
         self.activation = activation
         self.output_activation = output_activation
         self.contained_active_population = set()
+        self.layer_norm = layer_norm
+        self.output_vanish = output_vanish
+
+        self.net = self.create_net()
+
+    def forward(self, x):
+        if not isinstance(x, torch.Tensor):
+            x = torch.FloatTensor(x)
+
+        for value in self.net:
+            x = value(x)
+        return x
+
+    def get_activation(self, activation_names):
+        activation_functions = {'tanh': nn.Tanh, 'linear': nn.Identity, 'relu': nn.ReLU, 'elu': nn.ELU,
+                                'softsign': nn.Softsign, 'sigmoid': nn.Sigmoid, 'softplus': nn.Softplus,
+                                'lrelu': nn.LeakyReLU, 'prelu': nn.PReLU, }
+
+        return activation_functions[activation_names]()
+
 
     def get_cell_count(self, cell_id: int):
         count = 0
@@ -69,7 +90,7 @@ class EvolvableMacroNetwork(nn.Module):
     def update_cell_fitnesses(self, mean_fitness) -> None:
         for layer in self.layers:
             for cell in layer.cells:
-                cell.fitness.append(mean_fitness)
+                cell.fitness = mean_fitness
                 cell.active_population = True
 
     def get_active_population(self) -> Set[int]:
@@ -111,6 +132,7 @@ class EvolvableMacroNetwork(nn.Module):
     #returns an ordered dict of macrolayers and 
     #macro layer connections
     # Todo: in future if we do arbitrary connections between cells, create special linear layer class for this so that we can keep using nn.sequential
+    # Todo: add layer norm!!!
     def create_net(self) -> OrderedDict:
         net_dict = OrderedDict()
 
@@ -118,7 +140,7 @@ class EvolvableMacroNetwork(nn.Module):
         layer0_indim = self.layers[0].get_input_dims()
         net_dict[f'linear_layer_input'] = nn.Linear(self.num_inputs,\
                                                     sum(layer0_indim))
-        net_dict[f'activation_input'] = self.activation
+        net_dict[f'activation_input'] = self.get_activation(self.activation)
 
         #create layer, linear connections 
         for i in range(len(self.layers)-1):
@@ -128,7 +150,7 @@ class EvolvableMacroNetwork(nn.Module):
             input_dims = self.layers[i+1].get_input_dims()
             net_dict[f'linear_layer_{i}'] = nn.Linear(sum(output_dims),\
                                                       sum(input_dims))
-            net_dict[f'activation{i}'] = self.activation
+            net_dict[f'activation{i}'] = self.get_activation(self.activation)
 
         lastlayer_index = len(self.layers) - 1
         lastlayer_outdim = self.layers[-1].get_output_dims()
@@ -137,7 +159,7 @@ class EvolvableMacroNetwork(nn.Module):
         net_dict[f'layer_{lastlayer_index}'] = self.layers[lastlayer_index]
         net_dict[f'linear_layer_output'] = nn.Linear(sum(lastlayer_outdim),\
                                                      self.num_outputs)
-        net_dict[f'activation_output'] = self.output_activation
+        net_dict[f'activation_output'] = self.get_activation(self.activation)
 
         #return net_dict
         #not sure if this will work with nn.sequential
@@ -229,7 +251,7 @@ class EvolvableMacroNetwork(nn.Module):
         new_macro_layers = []
         
         #copy macro layers
-        for layer in layers:
+        for layer in self.layers:
             #copy macro layer
             new_layer = layer.clone(micro_ind_population_dict)
             new_macro_layers.append(new_layer)
@@ -237,6 +259,26 @@ class EvolvableMacroNetwork(nn.Module):
         clone = EvolvableMacroNetwork(layers = new_macro_layers, 
                 **copy.deepcopy(self.init_dict))
         #does this copy the architecture
+        clone.load_state_dict(self.state_dict())
+        return clone
+
+    # this adds cells to the original class
+    def clone_without_adding_cells_to_pop(self):
+        #    def __init__(self, layers: List[MacroLayer], num_inputs: int,\
+        # num_outputs: int, activation='relu', output_activation=None)\
+
+        # new list of layers
+        new_macro_layers = []
+
+        # copy macro layers
+        for layer in self.layers:
+            # copy macro layer
+            new_layer = layer.clone_without_adding_cells()
+            new_macro_layers.append(new_layer)
+
+        clone = EvolvableMacroNetwork(layers=new_macro_layers,
+                                      **copy.deepcopy(self.init_dict))
+        # does this copy the architecture
         clone.load_state_dict(self.state_dict())
         return clone
 

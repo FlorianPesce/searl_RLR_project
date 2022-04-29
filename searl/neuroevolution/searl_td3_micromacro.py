@@ -16,7 +16,7 @@ from searl.neuroevolution.components.replay_memory import (MPReplayMemory,
 from searl.neuroevolution.evaluation_td3 import MPEvaluation
 from searl.neuroevolution.mutation_macro import MacroMutations
 from searl.neuroevolution.mutation_micro import MicroMutations
-from searl.neuroevolution.tournament_selection import TournamentSelection
+from searl.neuroevolution.tournament_selection_macromicro import TournamentSelection
 from searl.neuroevolution.training_td3 import TD3Training
 from searl.utils.supporter import Supporter
 
@@ -155,19 +155,23 @@ class SEARLforTD3():
                     cell.cell_copies_in_population.append(ev_MLPCell)
 
     #
-    def get_cells_from_cell_ids(self, micro_population: Dict[int, IndividualMicro],
+    def get_micro_individual_from_cell_ids(self, micro_population: Dict[int, IndividualMicro],
                                 cell_ids: List[int]) -> Dict[int, IndividualMicro]:
         cell_ids = set(cell_ids)
-        in_cell_ids = []
-        for individual_micro_id in micro_population:
-            if individual_micro_id in cell_ids:
-                in_cell_ids[individual_micro_id] = micro_population[individual_micro_id]
+        #in_cell_ids = []
+        #for individual_micro_id in micro_population:
+        #    if individual_micro_id in cell_ids:
+        #        in_cell_ids[individual_micro_id] = micro_population[individual_micro_id]
+        micro_individuals = []
+        for cell_id in cell_ids:
+            temp_micro_ind = micro_population[cell_id]
+            micro_individuals.append(temp_micro_ind)
 
-        return in_cell_ids
+        return micro_individuals
 
     def update_cell_mean_fitness(self, micro_population: 
             Dict[int, IndividualMicro]) -> None:
-        assert(len(micro_population > 0))
+        assert(len(micro_population.keys()) > 0)
 
         for individual_micro_id in micro_population:
             individual_micro = micro_population[individual_micro_id]
@@ -263,8 +267,9 @@ class SEARLforTD3():
     def evolve_hierarchical_SEARL(
             self, micro_population: Dict[int, IndividualMicro],
             macro_population: List[IndividualMacro],
-            n_cells_mutate: int):
+            n_cells_mutate: int, num_frames:int = 0, epoch:int = 0):
 
+        num_frames = num_frames
         # potential issues:
 
         # if you mutate cells
@@ -362,10 +367,12 @@ class SEARLforTD3():
                 num_frames, epoch)
 
             # save populations
+            """
             self.ckp.save_object(
                 macro_population, name="macro_population")
             self.ckp.save_object(micro_population, name="micro_population")
             self.log.log("save population")
+            """
             if not self.cfg.nevo.ind_memory:
                 rm_dict = self.replay_memory.save()
                 if isinstance(rm_dict, str):
@@ -378,6 +385,7 @@ class SEARLforTD3():
             if num_frames >= self.cfg.train.num_frames:
                 break
 
+
             # TOURNAMENT SELECTION
             if self.cfg.nevo.selection:
                 elite, macro_population = self.log.log_func(
@@ -386,6 +394,7 @@ class SEARLforTD3():
                 test_fitness = self.eval.test_individual(elite, epoch)
                 self.log(f"##### ELITE INFO {epoch}", time_step=num_frames)
                 self.log("best_test_fitness", test_fitness, num_frames)
+
 
             # TODO add mutations
             # parameter for mutation percentage
@@ -396,7 +405,7 @@ class SEARLforTD3():
                 # for simplicity, copy entire macro_population.
                 # This can be changed to copying macro_individuals
                 # that have been affected by cell mutation.
-                macro_population_copy = macro_population.clone()
+                #macro_population_copy = macro_population.clone()
 
                 # set of cell ids (integers)
                 cell_active_population = self.get_cell_active_population(
@@ -421,7 +430,7 @@ class SEARLforTD3():
 
                 # get cell classes
                 # List[IndividualMicro]. With replacement.
-                cell_pop_for_mutation = self.get_cells_from_cell_ids(
+                cell_pop_for_mutation = self.get_micro_individual_from_cell_ids(
                     micro_population, cells_for_mutation)
 
                 #FOR ALL MICRO INDIVIDUALS, MUTATE (WHICH RETURNS A FULL CLONE), THEN COPY MACRO
@@ -454,7 +463,7 @@ class SEARLforTD3():
                     self.add_to_micro_population(new_ind_micro, micro_population)
 
                 #merge new macro individuals with macro population
-                macro_population = macro_population + new_macro_individuals
+
 
                 # in here you could incorporate some limit for how many cells get mutated in an individual
                 # but then the new cells need to be added back to the original cell class instead of the
@@ -473,8 +482,11 @@ class SEARLforTD3():
                 # non-mutated macro individuals + macro individuals with ONE micro-mutation
 
                 # construct overall population with non-mutated and mutated macro individuals
-                if self.cfg["micro_mutation"]["keep_original_population"]:
-                    macro_population = macro_population_copy + macro_population
+                if self.cfg.micro_mutation.keep_original_population:
+                    macro_population = macro_population + new_macro_individuals
+                else:
+                    assert(False)
+                    macro_population = new_macro_individuals
 
             #   MACRO MUTATION
             if self.cfg.nevo.macro_mutation:
@@ -490,7 +502,8 @@ class SEARLforTD3():
                 # need to clone in order to update linear layers dimensions
                 macro_population = macro_population.clone()
 
-            #   TRAINING
+
+            #TRAINING
             if self.cfg.nevo.training:
                 macro_population = self.log.log_func(
                     self.training.train, population=macro_population,
@@ -511,4 +524,4 @@ def start_searl_micromacro_run(config, expt_dir):
         micro_population = searl.initial_population_micro()
         macro_population = searl.initial_population_macro(micro_population)
 
-        searl.evolve_hierarchical_SEARL(micro_population, macro_population)
+        searl.evolve_hierarchical_SEARL(micro_population, macro_population, n_cells_mutate=cfg.micro_mutation.n_cells_mutate)

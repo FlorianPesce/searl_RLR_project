@@ -2,7 +2,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = "cpu"
 
 
 def get_optimizer(name):
@@ -35,7 +36,8 @@ class TD3Training():
         Opti = get_optimizer(args.optimizer)
 
         actor = indi.actor
-        actor_target = type(actor)(**actor.init_dict)
+        #actor_target = type(actor)(**actor.init_dict)
+        actor_target = actor.clone_without_adding_cells_to_pop()
         actor_target.load_state_dict(actor.state_dict())
         actor.to(device)
         actor.train()
@@ -43,7 +45,8 @@ class TD3Training():
         actor_optim = Opti(actor.parameters(), lr=args.lr_actor)
 
         critic_1 = indi.critic_1
-        critic_1_target = type(critic_1)(**critic_1.init_dict)
+        #critic_1_target = type(critic_1)(**critic_1.init_dict)
+        critic_1_target = critic_1.clone_without_adding_cells_to_pop()
         critic_1_target.load_state_dict(critic_1.state_dict())
         critic_1.to(device)
         critic_1.train()
@@ -51,7 +54,8 @@ class TD3Training():
         critic_1_optim = Opti(critic_1.parameters(), lr=args.lr_critic)
 
         critic_2 = indi.critic_2
-        critic_2_target = type(critic_2)(**critic_2.init_dict)
+        #critic_2_target = type(critic_2)(**critic_2.init_dict)
+        critic_2_target = critic_2.clone_without_adding_cells_to_pop()
         critic_2_target.load_state_dict(critic_2.state_dict())
         critic_2.to(device)
         critic_2.train()
@@ -136,10 +140,15 @@ class TD3Training():
         if indi.td3_double_q:
             critic_2_optim.zero_grad()
 
-        indi.actor = actor.cpu().clone()
-        indi.critic_1 = critic_1.cpu().clone()
+
+        #indi.actor = actor.cpu().clone()
+        indi.actor.load_state_dict(actor.cpu().state_dict())
+
+        #indi.critic_1 = critic_1.cpu().clone()
+        indi.critic_1.load_state_dict(critic_1.cpu().state_dict())
         if indi.td3_double_q:
-            indi.critic_2 = critic_2.cpu().clone()
+            #indi.critic_2 = critic_2.cpu().clone()
+            indi.critic_2.load_state_dict(critic_2.cpu().state_dict())
         indi.train_log['train_iterations'] = iterations
         indi.train_log.update(args.get_dict)
 

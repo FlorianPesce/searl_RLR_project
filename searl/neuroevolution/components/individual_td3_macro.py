@@ -2,6 +2,7 @@ import copy
 from typing import List
 from searl.neuroevolution.components.evolvable_macro_network import EvolvableMacroNetwork
 from searl.neuroevolution.components.cell import EvolvableMLPCell
+from searl.neuroevolution.components.macro_layer import MacroLayer
 import numpy as np
 
 class IndividualMacro():
@@ -35,12 +36,12 @@ class IndividualMacro():
                 micro_ind.add_cell(ev_copy)
                 ev_cells.append(ev_copy)
 
-            actor_layers = [ev_cells[0]]
-            critic_1_layers = [ev_cells[1]]
-            critic_2_layers = [ev_cells[2]]
+            actor_layers = [MacroLayer([ev_cells[0]])]
+            critic_1_layers = [MacroLayer([ev_cells[1]])]
+            critic_2_layers = [MacroLayer([ev_cells[2]])]
 
-            self.actor = EvolvableMacroNetwork(state_dim, num_outputs=action_dim, **actor_config,
-                                               layers=actor_layers)
+            self.actor = EvolvableMacroNetwork(num_inputs=state_dim, num_outputs=action_dim, **actor_config,
+                                               layers = actor_layers)
             self.critic_1 = EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1, **critic_config,
                                                   layers=critic_1_layers)
             if td3_double_q:
@@ -48,10 +49,10 @@ class IndividualMacro():
                                                       **critic_2_config, layers=critic_2_layers)
 
         else:
-            self.actor = EvolvableMacroNetwork(num_inputs=state_dim, num_outputs=action_dim, **actor_config)
-            self.critic_1 = EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1, **critic_config)
+            self.actor = None#EvolvableMacroNetwork(num_inputs=state_dim, num_outputs=action_dim, **actor_config)
+            self.critic_1 = None#EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1, **critic_config)
             if td3_double_q:
-                self.critic_2 = EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1, **critic_2_config)
+                self.critic_2 = None#EvolvableMacroNetwork(num_inputs=state_dim + action_dim, num_outputs=1, **critic_2_config)
 
 
 
@@ -79,9 +80,11 @@ class IndividualMacro():
     def get_active_population(self):
         s1 = self.actor.get_active_population()
         s2 = self.critic_1.get_active_population()
+        s3 = set()
         if hasattr(self, 'critic_2'):
             s3 = self.critic_2.get_active_population()
-        return s1.union(s2, s3)
+        s1 = s1.union(s2, s3)
+        return s1
 
     def get_cells(self):
         s1 = self.actor.get_cells()
@@ -97,7 +100,7 @@ class IndividualMacro():
                 cell_id in self.critic_1.contained_active_population or \
                 cell_id in self.critic_2.contained_active_population
 
-    def clone(self, index=None, copy_fitness = False):
+    def clone(self, micro_ind_pop_dict, index=None, copy_fitness = False):
         if index is None:
             index = self.index
 
@@ -120,10 +123,10 @@ class IndividualMacro():
             clone.fitness = copy.deepcopy(self.fitness)
 
         clone.train_log = copy.deepcopy(self.train_log)
-        clone.actor = self.actor.clone()
-        clone.critic_1 = self.critic_1.clone()
+        clone.actor = self.actor.clone(micro_ind_pop_dict)
+        clone.critic_1 = self.critic_1.clone(micro_ind_pop_dict)
         if self.td3_double_q:
-            clone.critic_2 = self.critic_2.clone()
+            clone.critic_2 = self.critic_2.clone(micro_ind_pop_dict)
 
         if self.replay_memory:
             self.replay_memory = copy.deepcopy(self.replay_memory)
