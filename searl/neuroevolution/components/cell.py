@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-
+#micro network class
 class EvolvableMLPCell(nn.Module):
     def __init__(self, id: int, num_inputs: int,\
                  num_outputs: int, hidden_size: List[int], activation='relu',\
@@ -159,6 +159,7 @@ class EvolvableMLPCell(nn.Module):
             self.net = new_net
         else:
             self.add_node()
+
 
     def remove_layer(self):
         if len(self.hidden_size) > 1:  # HARD LIMIT

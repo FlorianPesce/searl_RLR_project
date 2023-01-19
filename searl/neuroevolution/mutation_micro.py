@@ -9,7 +9,7 @@ from searl.neuroevolution.components.individual_td3_micro import IndividualMicro
 #import searl.neuroevolution.searl_td3_micromacro as SEARLforTD3
 import searl.neuroevolution.searl_td3_micromacro
 
-
+# This file implements the mutations applied within a cell
 class MicroMutations():
     def __init__(self, config, replay_sample_queue):
         self.cfg = config

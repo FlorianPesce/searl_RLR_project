@@ -7,7 +7,7 @@ from searl.neuroevolution.components.individual_td3_macro import IndividualMacro
 from searl.neuroevolution.components.individual_td3_micro import IndividualMicro
 from searl.neuroevolution.components.evolvable_macro_network import EvolvableMacroNetwork
 
-
+# This file implements the mutations applied to an individual in the population. (Mainly adding or removing cells)
 class MacroMutations():
 
     def __init__(self, config, replay_sample_queue):

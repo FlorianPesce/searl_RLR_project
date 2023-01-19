@@ -21,6 +21,7 @@ from searl.neuroevolution.training_td3 import TD3Training
 from searl.utils.supporter import Supporter
 
 
+# Trains model. Sets up and manages population during training
 class SEARLforTD3():
 
     def __init__(self, config, logger, checkpoint):
@@ -485,7 +486,7 @@ class SEARLforTD3():
                 if self.cfg.micro_mutation.keep_original_population:
                     macro_population = macro_population + new_macro_individuals
                 else:
-                    assert(False)
+                    #assert(False)
                     macro_population = new_macro_individuals
 
             #   MACRO MUTATION

@@ -43,6 +43,8 @@ from searl.neuroevolution.components.individual_td3_micro import IndividualMicro
 
 #how will we store layer transitions
 #how will we update layer transitions
+
+#Individual Network class
 class EvolvableMacroNetwork(nn.Module):
     def __init__(self, layers: List[MacroLayer], num_inputs: int,\
                  num_outputs: int, activation='relu',layer_norm = True,
@@ -51,8 +53,6 @@ class EvolvableMacroNetwork(nn.Module):
         super(EvolvableMacroNetwork, self).__init__()
 
         self.layers = nn.ModuleList(layers)
-
-
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
         self.activation = activation
@@ -60,7 +60,6 @@ class EvolvableMacroNetwork(nn.Module):
         self.contained_active_population = set()
         self.layer_norm = layer_norm
         self.output_vanish = output_vanish
-
         self.net = self.create_net()
 
     def forward(self, x):

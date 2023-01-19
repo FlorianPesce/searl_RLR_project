@@ -2,8 +2,6 @@ import argparse
 import yaml
 import os
 from pathlib import Path
-
-
 import sys
 
 sys.path.append("/home/tdelmatt/Documents/projects/searl_RLR_project")
@@ -11,10 +9,9 @@ sys.path.append("/home/tdelmatt/Documents/projects/searl_RLR_project")
 from searl.neuroevolution.searl_td3_micromacro import start_searl_micromacro_run
 
 
-
+# This file runs the hierarchical architecture search
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='define cluster setup')
-
     parser.add_argument('--expt_dir', type=str, default=False, help='expt_dir')
     parser.add_argument('--config_file', type=str, default=False, help='config_dir')
     args = parser.parse_args()
